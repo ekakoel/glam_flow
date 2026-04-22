@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Scopes\TenantScope;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,6 +27,8 @@ class Booking extends Model
         'booking_date',
         'booking_time',
         'end_time',
+        'google_event_id',
+        'tomorrow_reminder_sent_at',
         'location',
         'status',
         'notes',
@@ -39,6 +42,8 @@ class Booking extends Model
         'booking_date' => 'date',
         'booking_time' => 'string',
         'end_time' => 'string',
+        'google_event_id' => 'string',
+        'tomorrow_reminder_sent_at' => 'datetime',
     ];
 
     public function service(): BelongsTo
@@ -56,6 +61,11 @@ class Booking extends Model
         return $this->hasOne(Payment::class);
     }
 
+    public function calendarIntegration(): HasOne
+    {
+        return $this->hasOne(CalendarIntegration::class);
+    }
+
     public function bookingItems(): HasMany
     {
         return $this->hasMany(BookingItem::class);
@@ -69,5 +79,37 @@ class Booking extends Model
     protected static function booted(): void
     {
         static::addGlobalScope(new TenantScope());
+    }
+
+    public function serviceStartsAt(): ?Carbon
+    {
+        if ($this->booking_date === null) {
+            return null;
+        }
+
+        $time = $this->booking_time ?? '00:00:00';
+
+        return Carbon::parse($this->booking_date->format('Y-m-d').' '.$time);
+    }
+
+    public function serviceEndsAt(): ?Carbon
+    {
+        if ($this->booking_date === null) {
+            return null;
+        }
+
+        $time = $this->end_time ?? $this->booking_time ?? '00:00:00';
+
+        return Carbon::parse($this->booking_date->format('Y-m-d').' '.$time);
+    }
+
+    public function hasServicePassed(): bool
+    {
+        $endAt = $this->serviceEndsAt() ?? $this->serviceStartsAt();
+        if ($endAt === null) {
+            return false;
+        }
+
+        return $endAt->isPast();
     }
 }

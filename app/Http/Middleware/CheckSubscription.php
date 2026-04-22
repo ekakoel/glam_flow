@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\SubscriptionService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -11,14 +12,18 @@ class CheckSubscription
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        $subscription = $user?->subscription;
-
-        if (! $subscription) {
-            return redirect('/onboarding')->with('error', 'Please complete your subscription setup first.');
+        if (! $user) {
+            return $next($request);
         }
 
-        if ($subscription->expired_at && $subscription->expired_at->isPast()) {
-            return redirect('/billing')->with('error', 'Your trial has expired. Please upgrade to continue.');
+        // Backfill otomatis untuk akun lama yang belum punya subscription row.
+        if (! $user->subscription) {
+            app(SubscriptionService::class)->ensureUserSubscription((int) $user->id);
+            $user->refresh();
+        }
+
+        if ($user && ! $user->isSuperAdmin() && ! $user->hasCompletedOnboarding()) {
+            return redirect('/onboarding')->with('error', 'Silakan selesaikan onboarding sebelum mengakses dasbor.');
         }
 
         return $next($request);

@@ -22,8 +22,12 @@ class Payment extends Model
         'tenant_id',
         'booking_id',
         'amount',
+        'discount_amount',
+        'dp_amount',
+        'paid_amount',
         'status',
         'payment_method',
+        'dp_paid_at',
         'paid_at',
     ];
 
@@ -31,6 +35,10 @@ class Payment extends Model
         'tenant_id' => 'integer',
         'booking_id' => 'integer',
         'amount' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'dp_amount' => 'decimal:2',
+        'paid_amount' => 'decimal:2',
+        'dp_paid_at' => 'datetime',
         'paid_at' => 'datetime',
     ];
 
@@ -47,5 +55,15 @@ class Payment extends Model
     protected static function booted(): void
     {
         static::addGlobalScope(new TenantScope());
+    }
+
+    public function isDpPaid(): bool
+    {
+        return $this->dp_paid_at !== null || (float) $this->paid_amount >= (float) $this->dp_amount;
+    }
+
+    public function isSettled(): bool
+    {
+        return $this->status === self::STATUS_PAID && (float) $this->paid_amount >= (float) $this->amount;
     }
 }

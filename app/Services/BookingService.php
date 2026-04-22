@@ -6,7 +6,6 @@ use App\Models\Booking;
 use App\Repositories\BookingRepository;
 use App\Repositories\CustomerRepository;
 use App\Repositories\ServiceRepository;
-use App\Services\Integrations\GoogleCalendarService;
 use App\Services\Payments\PaymentService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -43,6 +42,9 @@ class BookingService
     {
         $tenantId = (int) Auth::id();
         $this->subscriptionService->assertBookingCreationAllowed($tenantId);
+        if (in_array((string) ($data['status'] ?? ''), [Booking::STATUS_CONFIRMED, Booking::STATUS_COMPLETED], true)) {
+            throw new InvalidArgumentException('Booking baru harus dibuat dengan status Menunggu sampai DP dibayar.');
+        }
         $this->customerRepository->findOrFail((int) $data['customer_id']);
         $serviceItems = $this->normalizeServiceItems($data);
         $primaryServiceId = (int) $serviceItems->first()['service_id'];
@@ -60,9 +62,11 @@ class BookingService
         $data['total_people'] = $totalPeople;
         $data['booking_time'] = $startTime;
         $data['end_time'] = $endTime;
+        $data['tomorrow_reminder_sent_at'] = null;
         $booking = DB::transaction(function () use ($data, $serviceItems, $tenantId) {
             $booking = $this->bookingRepository->create($data);
             $this->syncBookingItems($booking, $serviceItems, $tenantId);
+            $this->subscriptionService->recordBookingConsumed($tenantId);
 
             return $booking;
         });
@@ -83,6 +87,10 @@ class BookingService
 
     public function update(Booking $booking, array $data): Booking
     {
+        $this->assertBookingEditable($booking, 'diperbarui');
+        $targetStatus = (string) ($data['status'] ?? $booking->status);
+        $this->assertStatusPaymentRules($booking, $targetStatus);
+
         if (isset($data['customer_id'])) {
             $this->customerRepository->findOrFail((int) $data['customer_id']);
         }
@@ -101,9 +109,14 @@ class BookingService
         $totalDuration = (int) $normalizedItems->sum('duration_minutes');
         $totalPeople = (int) $normalizedItems->sum('people_count');
         $startTime = $this->normalizeTime($bookingTime);
-        $endTime = $this->calculateEndTimeByDuration($startTime, $totalDuration);
+        $endTime = isset($data['end_time']) && is_string($data['end_time']) && trim($data['end_time']) !== ''
+            ? $this->normalizeTime($data['end_time'])
+            : $this->calculateEndTimeByDuration($startTime, $totalDuration);
 
         if ($bookingDate && $bookingTime) {
+            if (Carbon::parse($bookingDate.' '.$endTime)->lessThanOrEqualTo(Carbon::parse($bookingDate.' '.$startTime))) {
+                throw new InvalidArgumentException('Waktu selesai harus setelah waktu mulai.');
+            }
             $this->assertBookingDateTime($bookingDate, $startTime, $status);
             $this->checkAvailability($bookingDate, $startTime, $endTime, $booking->id);
         }
@@ -112,6 +125,13 @@ class BookingService
         $data['total_people'] = $totalPeople;
         $data['booking_time'] = $startTime;
         $data['end_time'] = $endTime;
+        if (
+            $bookingDate !== $booking->booking_date?->format('Y-m-d')
+            || $startTime !== $booking->booking_time
+            || $status !== $booking->status
+        ) {
+            $data['tomorrow_reminder_sent_at'] = null;
+        }
         $updatedBooking = DB::transaction(function () use ($booking, $data, $normalizedItems, $shouldReplaceItems) {
             $updatedBooking = $this->bookingRepository->update($booking, $data);
             if ($shouldReplaceItems) {
@@ -127,8 +147,9 @@ class BookingService
 
     public function delete(Booking $booking): void
     {
-        $this->bookingRepository->delete($booking);
+        $this->assertBookingEditable($booking, 'dihapus');
         $this->googleCalendarService->detachBooking($booking);
+        $this->bookingRepository->delete($booking);
     }
 
     public function getTotalBookings(): int
@@ -138,12 +159,30 @@ class BookingService
 
     public function getTotalRevenue(): float
     {
-        return $this->bookingRepository->totalRevenue();
+        return (float) ($this->paymentService->getRevenueSummary()['total_revenue'] ?? 0);
     }
 
     public function getUpcomingBookings(int $limit = 5): Collection
     {
         return $this->bookingRepository->getUpcoming($limit);
+    }
+
+    public function getBookingsForDate(string $date, bool $includeCanceled = false): Collection
+    {
+        $query = Booking::query()
+            ->with(['service', 'customer', 'bookingItems'])
+            ->whereDate('booking_date', $date)
+            ->orderBy('booking_time');
+
+        if (! $includeCanceled) {
+            $query->whereIn('status', [
+                Booking::STATUS_PENDING,
+                Booking::STATUS_CONFIRMED,
+                Booking::STATUS_COMPLETED,
+            ]);
+        }
+
+        return $query->get();
     }
 
     public function getCalendarEvents(?string $startDate = null, ?string $endDate = null): SupportCollection
@@ -192,12 +231,13 @@ class BookingService
     public function checkAvailability(string $date, string $startTime, string $endTime, ?int $ignoreBookingId = null): void
     {
         if ($this->bookingRepository->hasConflict($date, $startTime, $endTime, $ignoreBookingId)) {
-            throw new InvalidArgumentException('Selected schedule overlaps with another booking.');
+            throw new InvalidArgumentException('Jadwal yang dipilih bentrok dengan booking lain.');
         }
     }
 
     public function rescheduleFromCalendar(Booking $booking, string $startDateTime): Booking
     {
+        $this->assertBookingEditable($booking, 'diubah jadwalnya');
         $start = Carbon::parse($startDateTime);
         $startTime = $start->format('H:i:s');
         $totalDuration = (int) $booking->bookingItems()
@@ -218,6 +258,44 @@ class BookingService
         ]);
     }
 
+    public function rescheduleByDateTime(
+        Booking $booking,
+        string $date,
+        string $startTime,
+        ?string $endTime = null
+    ): Booking {
+        $this->assertBookingEditable($booking, 'diubah jadwalnya');
+        $normalizedStart = $this->normalizeTime($startTime);
+        $normalizedEnd = $endTime !== null && trim($endTime) !== ''
+            ? $this->normalizeTime($endTime)
+            : null;
+
+        if ($normalizedEnd === null) {
+            $totalDuration = (int) $booking->bookingItems()
+                ->selectRaw('COALESCE(SUM(duration_minutes), 0) AS total_duration')
+                ->value('total_duration');
+            if ($totalDuration <= 0) {
+                $totalDuration = (int) $this->serviceRepository->findOrFail((int) $booking->service_id)->duration;
+            }
+            $normalizedEnd = $this->calculateEndTimeByDuration($normalizedStart, $totalDuration);
+        }
+
+        $startAt = Carbon::parse($date.' '.$normalizedStart);
+        $endAt = Carbon::parse($date.' '.$normalizedEnd);
+        if ($endAt->lessThanOrEqualTo($startAt)) {
+            throw new InvalidArgumentException('Waktu selesai harus setelah waktu mulai.');
+        }
+
+        $this->assertBookingDateTime($date, $normalizedStart, $booking->status);
+        $this->checkAvailability($date, $normalizedStart, $normalizedEnd, $booking->id);
+
+        return $this->update($booking, [
+            'booking_date' => $date,
+            'booking_time' => $normalizedStart,
+            'end_time' => $normalizedEnd,
+        ]);
+    }
+
     private function assertBookingDateTime(string $date, string $time, string $status): void
     {
         if (! in_array($status, [Booking::STATUS_PENDING, Booking::STATUS_CONFIRMED], true)) {
@@ -227,7 +305,31 @@ class BookingService
         $bookingAt = Carbon::parse($date.' '.$time);
 
         if ($bookingAt->isPast()) {
-            throw new InvalidArgumentException('Booking date and time must be in the future.');
+            throw new InvalidArgumentException('Tanggal dan waktu booking harus di masa depan.');
+        }
+    }
+
+    private function assertBookingEditable(Booking $booking, string $action): void
+    {
+        if (! $booking->hasServicePassed()) {
+            return;
+        }
+
+        throw new InvalidArgumentException(sprintf(
+            'Booking yang tanggal layanannya sudah berlalu tidak dapat %s. Anda masih bisa melihat detailnya.',
+            $action
+        ));
+    }
+
+    private function assertStatusPaymentRules(Booking $booking, string $targetStatus): void
+    {
+        if ($targetStatus !== Booking::STATUS_CONFIRMED) {
+            return;
+        }
+
+        $payment = $this->paymentService->createForBooking($booking);
+        if (! $payment->isDpPaid()) {
+            throw new InvalidArgumentException('Booking tidak dapat dikonfirmasi karena DP belum dibayar.');
         }
     }
 
@@ -272,7 +374,7 @@ class BookingService
         if ($rows->isEmpty()) {
             $singleServiceId = (int) ($data['service_id'] ?? 0);
             if ($singleServiceId <= 0) {
-                throw new InvalidArgumentException('At least one service is required.');
+                throw new InvalidArgumentException('Minimal satu layanan wajib dipilih.');
             }
             $rows = collect([[
                 'service_id' => $singleServiceId,

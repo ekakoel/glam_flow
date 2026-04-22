@@ -1,79 +1,80 @@
-# 💄 MUA Management System (Laravel SaaS)
+# Glam Flow (Laravel SaaS)
 
-A modern, scalable **Makeup Artist (MUA) Management System** built with
-Laravel.\
-Designed to help MUA professionals manage bookings, services, customers,
-schedules, and business growth efficiently.
+> Smart Tools for Modern Makeup Artists
 
-------------------------------------------------------------------------
+Glam Flow adalah sistem manajemen bisnis MUA berbasis Laravel untuk mengelola layanan, booking, pelanggan, pembayaran, dan jadwal dalam satu tempat.
 
-## 🚀 Features
+## Fitur Utama
+- Manajemen layanan (harga, durasi, deskripsi).
+- Booking dan kalender (FullCalendar).
+- Cek bentrok jadwal otomatis.
+- Panel `Jadwal Besok` + quick actions (`Detail`, `Konfirmasi`, `Hubungi WA`).
+- Reminder otomatis H-1 (email + WhatsApp placeholder log) untuk booking besok.
+- Manajemen pelanggan.
+- Pembayaran dan invoice.
+- Alur pembayaran 2 tahap: DP wajib + pelunasan fleksibel sebelum tanggal layanan lewat.
+- Public booking link/form.
+- Onboarding wizard.
+- Paket SaaS `Free`, `Pro`, `Premium`.
 
-### 🗓 Booking & Scheduling
+## Arsitektur Paket Layanan (Single Source of Truth)
+Semua aturan paket dipusatkan di:
 
--   Create and manage bookings بسهولة
--   Calendar view (FullCalendar integration)
--   Prevent double booking (conflict detection)
+- [`config/plans.php`](config/plans.php)
 
-### 💼 Service Management
+Yang diatur di sana:
+- Nama paket, harga, siklus billing.
+- Batas booking total (`booking_limit_total`).
+- Benefit paket.
+- Daftar fitur.
+- Feature flags.
 
--   Create and manage services
--   Set pricing & duration
--   Categorize services (Wedding, Event, etc.)
+## Implementasi Paket di Kode
+- Normalisasi dan katalog paket: [`app/Services/PlanService.php`](app/Services/PlanService.php)
+- Enforcement kuota booking + akses fitur: [`app/Services/SubscriptionService.php`](app/Services/SubscriptionService.php)
+- Paket Free aktif tanpa batas waktu, dengan kuota maksimal 10 booking total.
+- Register plan-aware: [`app/Http/Controllers/Auth/RegisteredUserController.php`](app/Http/Controllers/Auth/RegisteredUserController.php)
+- Billing, onboarding, dashboard membaca data paket dari source yang sama.
 
-### 👩‍💼 Customer Management
+## Notifikasi Booking Besok
+- User bisa mengaktifkan/menonaktifkan notifikasi dari halaman profil (`Notifikasi booking besok`).
+- Jika aktif, ikon kalender di navbar menampilkan badge jumlah booking besok.
+- Scheduler menjalankan command reminder H-1 setiap hari pukul `18:00`:
+  - `php artisan bookings:send-tomorrow-reminders`
+- Scheduler juga menjalankan auto-settle pembayaran setiap `15` menit:
+  - `php artisan payments:auto-settle-past-service`
+- Untuk cron server Laravel:
+  - `* * * * * php /path-to-project/artisan schedule:run >> /dev/null 2>&1`
 
--   Store customer data
--   Track booking history
--   CRM-ready structure
+## Aturan Pembayaran Booking
+- Tombol aksi pada halaman booking menggunakan label `Pembayaran`.
+- Setiap booking wajib DP minimum (default 30%, dapat diatur via `PAYMENT_DP_MIN_PERCENT`).
+- Nominal DP dapat diinput manual per booking pada halaman pembayaran (sesuai kesepakatan customer).
+- Booking tidak bisa dikonfirmasi jika DP belum dibayar.
+- Pelunasan manual dapat dilakukan kapan saja selama tanggal layanan belum lewat.
+- Jika tanggal layanan sudah lewat, pembayaran booking (selain booking `canceled`) otomatis ditandai `Lunas`.
+- Aksi `Batal` pada halaman pembayaran akan membatalkan booking (status booking `canceled`).
+- Jika booking dibatalkan oleh customer, DP yang sudah dibayar tetap tercatat sebagai pendapatan (tanpa refund).
+- Tombol `Bayar` pada detail booking dihapus, hanya menggunakan CTA `Pembayaran`.
+- Booking berstatus `canceled` tidak dapat membuka halaman pembayaran booking terkait.
 
-### 📊 Dashboard & Reports
+## UX Anti-Kebingungan Paket
+- Status paket + aturan paket tampil di onboarding, dashboard, dan billing.
+- Pemakaian kuota booking total ditampilkan jelas.
+- Saat kuota Free habis, user dapat pesan error yang jelas + arahan upgrade.
+- Kuota booking dihitung sebagai kuota terpakai kumulatif (`bookings_consumed_total`) dan tidak berkurang saat booking dihapus.
 
--   Revenue tracking
--   Booking statistics
--   Business insights
+## Aturan Siklus Booking
+- Booking yang tanggal/jam layanannya sudah berlalu bersifat read-only:
+  - Tidak bisa diubah.
+  - Tidak bisa dihapus.
+  - Tetap bisa dilihat detailnya.
 
-### 💳 Payment System
-
--   Manual & future gateway support
--   Invoice generation (PDF)
--   Payment tracking
-
-### 📆 Calendar Integration
-
--   Visual schedule management
--   Real-time booking display
--   Ready for Google Calendar sync
-
-### 🧾 SaaS Multi-Tenant System
-
--   Multiple users (MUA) supported
--   Data isolation per user
--   Subscription-based model
-
-------------------------------------------------------------------------
-
-## 🧱 Tech Stack
-
--   **Backend:** Laravel
--   **Frontend:** Blade + Tailwind CSS
--   **Database:** MySQL / SQLite
--   **Calendar:** FullCalendar.js
--   **PDF:** DOMPDF
-
-------------------------------------------------------------------------
-
-## ⚙️ Installation
-
-``` bash
-git clone https://github.com/your-repo/mua-system.git
-cd mua-system
-
+## Instalasi
+```bash
 composer install
 cp .env.example .env
 php artisan key:generate
-
-# setup database
 php artisan migrate
 
 npm install
@@ -82,56 +83,18 @@ npm run dev
 php artisan serve
 ```
 
-------------------------------------------------------------------------
+## Testing
+```bash
+php artisan test
+```
 
-## 🔐 Authentication
+Test matriks paket mencakup:
+- Free dibatasi kuota booking total.
+- Pro dapat booking di atas kuota Free.
 
-Uses Laravel Breeze: - Login / Register - Secure authentication flow
+## Catatan Konfigurasi
+- Tagline: `APP_TAGLINE="Smart Tools for Modern Makeup Artists"`
+- Locale default: Indonesia (`id`).
 
-------------------------------------------------------------------------
-
-## 💡 SaaS Flow
-
-1.  User selects plan (Free / Pro / Premium)
-2.  Registers account
-3.  Gets onboarding experience
-4.  Starts managing bookings
-5.  Upgrade via billing system
-
-------------------------------------------------------------------------
-
-## 📂 Project Structure
-
-    app/
-     ├── Models
-     ├── Services
-     ├── Http/Controllers
-     ├── Scopes
-
-    resources/views/
-    routes/
-    database/
-
-------------------------------------------------------------------------
-
-## 📈 Future Improvements
-
--   Google Calendar Sync
--   WhatsApp Notifications
--   Payment Gateway (Midtrans / Stripe)
--   Mobile App (API ready)
--   AI-based scheduling
-
-------------------------------------------------------------------------
-
-## 🧠 Author
-
-Built for modern MUA businesses & digital entrepreneurs.
-
-------------------------------------------------------------------------
-
-## 📄 License
-
-This project is open-source and available under the MIT License.
-![Laravel](https://img.shields.io/badge/Laravel-Framework-red)
-![License](https://img.shields.io/badge/license-MIT-blue)
+## License
+MIT

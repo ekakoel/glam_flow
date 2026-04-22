@@ -1,63 +1,213 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <title>Invoice {{ $invoiceNumber }}</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; color: #333; font-size: 12px; }
-        .container { width: 100%; padding: 24px; }
-        .title { font-size: 24px; font-weight: bold; margin-bottom: 8px; color: #9f1239; }
-        .muted { color: #666; margin-bottom: 16px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background-color: #fff1f2; }
-        .total { margin-top: 18px; font-size: 16px; font-weight: bold; text-align: right; }
+        body { font-family: DejaVu Sans, sans-serif; color: #1f2937; font-size: 12px; }
+        .container { width: 100%; padding: 20px; }
+        .header-table { width: 100%; border: 0; margin: 0 0 16px 0; border-collapse: collapse; }
+        .header-table td { border: 0; vertical-align: top; padding: 0; }
+        .logo-box { width: 62px; height: 62px; border: 1px solid #f1d5dc; border-radius: 12px; overflow: hidden; background: #fff7fa; text-align: center; }
+        .logo-box img { width: 100%; height: 100%; object-fit: cover; }
+        .logo-fallback { line-height: 62px; font-size: 22px; font-weight: bold; color: #9f1239; }
+        .brand-title { font-size: 16px; font-weight: bold; color: #881337; margin-bottom: 3px; }
+        .brand-sub { color: #6b7280; font-size: 11px; }
+        .invoice-title { font-size: 28px; font-weight: bold; color: #9f1239; text-align: right; margin-bottom: 6px; }
+        .invoice-meta { font-size: 11px; color: #6b7280; text-align: right; }
+        .section { margin-top: 14px; }
+        .grid { width: 100%; border-collapse: collapse; }
+        .grid td, .grid th { border: 1px solid #e5e7eb; padding: 8px 10px; }
+        .grid th { background: #fff1f2; text-align: left; color: #4b5563; font-size: 11px; text-transform: uppercase; }
+        .amount { text-align: right; white-space: nowrap; }
+        .summary { margin-top: 10px; width: 45%; margin-left: auto; border-collapse: collapse; }
+        .summary td { border: 1px solid #e5e7eb; padding: 8px 10px; }
+        .summary .label { background: #f9fafb; color: #4b5563; }
+        .summary .strong { font-weight: bold; }
+        .summary .total-row td { background: #fff1f2; font-weight: bold; }
+        .summary .remaining td { background: #fdf2f8; font-weight: bold; color: #9f1239; }
+        .pay-card { margin-top: 14px; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; background: #fafafa; }
+        .pay-title { font-size: 12px; font-weight: bold; color: #374151; margin-bottom: 8px; }
+        .pay-line { margin-bottom: 4px; color: #374151; }
+        .small { color: #6b7280; font-size: 10px; margin-top: 14px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        @php
-            $items = $booking->bookingItems;
-            $computedTotal = (float) ($items->sum('subtotal') ?: 0);
-            $fallbackTotal = (float) ($booking->payment?->amount ?? $booking->service->price);
-            $totalAmount = $computedTotal > 0 ? $computedTotal : $fallbackTotal;
-        @endphp
-        <div class="title">MUA Invoice</div>
-        <div class="muted">Invoice Number: {{ $invoiceNumber }}</div>
+    @php
+        $tenant = $booking->tenant;
+        $items = $booking->bookingItems;
+        $payment = $booking->payment;
 
-        <table>
+        $rawSubtotal = (float) $items->sum('subtotal');
+        $subtotal = $rawSubtotal > 0 ? $rawSubtotal : (float) ($booking->service->price ?? 0);
+        $discount = max(0, (float) ($payment?->discount_amount ?? 0));
+        if ($discount > $subtotal) {
+            $discount = $subtotal;
+        }
+
+        $total = (float) ($payment?->amount ?? max(0, $subtotal - $discount));
+        $dp = max(0, (float) ($payment?->dp_amount ?? 0));
+        $paid = max(0, (float) ($payment?->paid_amount ?? 0));
+        $remaining = max(0, $total - $paid);
+
+        $tenantName = $tenant?->studio_name ?: $tenant?->name ?: 'Glam Flow';
+        $tenantLocation = $tenant?->studio_location ?: '-';
+        $tenantInitial = strtoupper(substr((string) $tenantName, 0, 1));
+        $accounts = collect($tenantPaymentAccounts ?? []);
+        if ($accounts->isEmpty() && $tenant) {
+            $hasLegacy = filled($tenant->payment_bank_name) || filled($tenant->payment_account_number) || filled($tenant->payment_account_name);
+            if ($hasLegacy) {
+                $accounts = collect([
+                    (object) [
+                        'bank_name' => $tenant->payment_bank_name,
+                        'account_number' => $tenant->payment_account_number,
+                        'account_name' => $tenant->payment_account_name,
+                        'contact' => $tenant->payment_contact,
+                        'notes' => null,
+                        'is_primary' => true,
+                    ],
+                ]);
+            }
+        }
+    @endphp
+
+    <div class="container">
+        <table class="header-table">
             <tr>
-                <th>Customer Name</th>
-                <td>{{ $booking->customer->name }}</td>
-            </tr>
-            <tr>
-                <th>Services</th>
-                <td>
-                    @if($items->isNotEmpty())
-                        @foreach($items as $item)
-                            <div>{{ $item->service->name }} x {{ $item->people_count }} person</div>
-                        @endforeach
-                    @else
-                        {{ $booking->service->name }}
-                    @endif
+                <td style="width: 70px;">
+                    <div class="logo-box">
+                        @if(!empty($tenantLogoDataUri))
+                            <img src="{{ $tenantLogoDataUri }}" alt="Logo">
+                        @else
+                            <div class="logo-fallback">{{ $tenantInitial }}</div>
+                        @endif
+                    </div>
                 </td>
-            </tr>
-            <tr>
-                <th>Booking Date</th>
-                <td>{{ $booking->booking_date?->format('d M Y') }} {{ substr((string) $booking->booking_time, 0, 5) }}</td>
-            </tr>
-            <tr>
-                <th>Status</th>
-                <td>{{ ucfirst($booking->payment?->status ?? 'pending') }}</td>
-            </tr>
-            <tr>
-                <th>Amount</th>
-                <td>Rp {{ number_format($totalAmount, 0, ',', '.') }}</td>
+                <td style="padding-left: 12px;">
+                    <div class="brand-title">{{ $tenantName }}</div>
+                    <div class="brand-sub">{{ $tenantLocation }}</div>
+                    <div class="brand-sub">{{ $tenant?->email ?: '-' }}</div>
+                </td>
+                <td>
+                    <div class="invoice-title">INVOICE</div>
+                    <div class="invoice-meta">No: {{ $invoiceNumber }}</div>
+                    <div class="invoice-meta">Tanggal: {{ now()->format('d M Y') }}</div>
+                </td>
             </tr>
         </table>
 
-        <div class="total">
-            Total: Rp {{ number_format($totalAmount, 0, ',', '.') }}
+        <table class="grid section">
+            <tr>
+                <th style="width: 30%;">Tagihan Kepada</th>
+                <td>{{ $booking->customer->name }}</td>
+            </tr>
+            <tr>
+                <th>Jadwal Layanan</th>
+                <td>{{ $booking->booking_date?->format('d M Y') }} {{ substr((string) $booking->booking_time, 0, 5) }}</td>
+            </tr>
+            <tr>
+                <th>Status Booking</th>
+                <td>{{ ucfirst($booking->status) }}</td>
+            </tr>
+            <tr>
+                <th>Status Pembayaran</th>
+                <td>
+                    @if($remaining <= 0)
+                        Lunas
+                    @elseif($paid > 0)
+                        DP diterima, menunggu pelunasan
+                    @else
+                        Menunggu DP
+                    @endif
+                </td>
+            </tr>
+        </table>
+
+        <table class="grid section">
+            <thead>
+                <tr>
+                    <th>Layanan</th>
+                    <th style="width: 12%;">Qty</th>
+                    <th style="width: 18%;" class="amount">Harga</th>
+                    <th style="width: 20%;" class="amount">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if($items->isNotEmpty())
+                    @foreach($items as $item)
+                        <tr>
+                            <td>{{ $item->service->name }}</td>
+                            <td>{{ $item->people_count }} org</td>
+                            <td class="amount">Rp {{ number_format((float) $item->unit_price, 0, ',', '.') }}</td>
+                            <td class="amount">Rp {{ number_format((float) $item->subtotal, 0, ',', '.') }}</td>
+                        </tr>
+                    @endforeach
+                @else
+                    <tr>
+                        <td>{{ $booking->service->name }}</td>
+                        <td>{{ $booking->total_people ?? 1 }} org</td>
+                        <td class="amount">Rp {{ number_format((float) $booking->service->price, 0, ',', '.') }}</td>
+                        <td class="amount">Rp {{ number_format((float) $booking->service->price, 0, ',', '.') }}</td>
+                    </tr>
+                @endif
+            </tbody>
+        </table>
+
+        <table class="summary">
+            <tr>
+                <td class="label">Subtotal</td>
+                <td class="amount">Rp {{ number_format($subtotal, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td class="label">Discount</td>
+                <td class="amount">- Rp {{ number_format($discount, 0, ',', '.') }}</td>
+            </tr>
+            <tr class="total-row">
+                <td>Total Tagihan</td>
+                <td class="amount">Rp {{ number_format($total, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td class="label">DP Minimum</td>
+                <td class="amount">Rp {{ number_format($dp, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td class="label strong">Sudah Dibayar</td>
+                <td class="amount strong">Rp {{ number_format($paid, 0, ',', '.') }}</td>
+            </tr>
+            <tr class="remaining">
+                <td>Sisa Pembayaran</td>
+                <td class="amount">Rp {{ number_format($remaining, 0, ',', '.') }}</td>
+            </tr>
+        </table>
+
+        <div class="pay-card">
+            <div class="pay-title">Informasi Pembayaran</div>
+            @forelse($accounts as $account)
+                <div class="pay-line">
+                    Bank: {{ $account->bank_name ?: '-' }}
+                    @if(!empty($account->is_primary))
+                        <strong>(Utama)</strong>
+                    @endif
+                </div>
+                <div class="pay-line">No. Rekening: {{ $account->account_number ?: '-' }}</div>
+                <div class="pay-line">Atas Nama: {{ $account->account_name ?: '-' }}</div>
+                <div class="pay-line">Kontak Konfirmasi: {{ $account->contact ?: '-' }}</div>
+                @if(!empty($account->notes))
+                    <div class="pay-line">Catatan: {{ $account->notes }}</div>
+                @endif
+                @if(!$loop->last)
+                    <div class="pay-line" style="margin:8px 0; border-top:1px dashed #d1d5db;"></div>
+                @endif
+            @empty
+                <div class="pay-line">Belum ada rekening pembayaran yang diset tenant.</div>
+            @endforelse
+            @if(!empty($tenant?->payment_instructions))
+                <div class="pay-line" style="margin-top:8px;">Instruksi: {{ $tenant->payment_instructions }}</div>
+            @endif
+        </div>
+
+        <div class="small">
+            Invoice ini dibuat otomatis oleh sistem pada {{ now()->format('d M Y H:i') }}.
         </div>
     </div>
 </body>

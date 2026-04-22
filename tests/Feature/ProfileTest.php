@@ -30,6 +30,7 @@ class ProfileTest extends TestCase
             ->patch('/profile', [
                 'name' => 'Test User',
                 'email' => 'test@example.com',
+                'notify_tomorrow_booking' => '1',
             ]);
 
         $response
@@ -40,7 +41,28 @@ class ProfileTest extends TestCase
 
         $this->assertSame('Test User', $user->name);
         $this->assertSame('test@example.com', $user->email);
+        $this->assertTrue((bool) $user->notify_tomorrow_booking);
         $this->assertNull($user->email_verified_at);
+    }
+
+    public function test_tomorrow_booking_notification_preference_can_be_disabled(): void
+    {
+        $user = User::factory()->create([
+            'notify_tomorrow_booking' => true,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->patch('/profile', [
+                'name' => $user->name,
+                'email' => $user->email,
+            ]);
+
+        $response
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/profile');
+
+        $this->assertFalse((bool) $user->refresh()->notify_tomorrow_booking);
     }
 
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
@@ -52,6 +74,7 @@ class ProfileTest extends TestCase
             ->patch('/profile', [
                 'name' => 'Test User',
                 'email' => $user->email,
+                'notify_tomorrow_booking' => '1',
             ]);
 
         $response

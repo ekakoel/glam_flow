@@ -33,7 +33,7 @@ class ServiceController extends Controller
 
         return redirect()
             ->route('admin.services.index')
-            ->with('success', 'Service created successfully.');
+            ->with('success', 'Layanan berhasil dibuat.');
     }
 
     public function edit(int $service): View
@@ -50,7 +50,7 @@ class ServiceController extends Controller
 
         return redirect()
             ->route('admin.services.index')
-            ->with('success', 'Service updated successfully.');
+            ->with('success', 'Layanan berhasil diperbarui.');
     }
 
     public function destroy(int $service): RedirectResponse
@@ -60,6 +60,6 @@ class ServiceController extends Controller
 
         return redirect()
             ->route('admin.services.index')
-            ->with('success', 'Service deleted successfully.');
+            ->with('success', 'Layanan berhasil dihapus.');
     }
 }

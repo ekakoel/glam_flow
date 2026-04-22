@@ -1,4 +1,6 @@
-# Deployment Checklist
+# Glam Flow Deployment Checklist
+
+> Smart Tools for Modern Makeup Artists
 
 ## Environment
 - Set `APP_ENV=production`
@@ -20,3 +22,14 @@
 ## Database
 - Run migrations:
   - `php artisan migrate --force`
+
+## Paket SaaS
+- Pastikan konfigurasi paket di `config/plans.php` sudah sesuai kebutuhan produksi.
+- Jalankan cache config setelah perubahan paket:
+  - `php artisan config:cache`
+- Verifikasi alur berikut setelah deploy:
+  - register dengan plan `free/pro/premium`,
+  - onboarding,
+  - enforcement limit booking total untuk plan Free (maks 10 booking),
+  - akses berlanjut tanpa masa trial.
+

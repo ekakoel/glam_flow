@@ -1,57 +1,91 @@
-MUA Management System Blueprint (Laravel)
-1. Overview
-This system is a web-based MUA (Makeup Artist) management platform built using Laravel. It helps manage services, bookings, schedules, customer data, reports, and business growth tracking. It integrates with external calendars (Google Calendar) for job scheduling.
-2. Core Features
-- Service Management (Create, Edit, Pricing)
-- Booking System (Form + Auto Schedule)
-- Calendar Integration (Google Calendar API)
-- Customer Management (CRM)
-- Reports & Analytics
-- Payment Tracking
-- Notifications (Email / WhatsApp Integration)
-3. System Modules
-Admin Panel:
-- Dashboard Overview
-- Manage Services
-- Manage Bookings
-- Calendar View
-- Reports & Finance
+# Glam Flow Blueprint (Laravel)
+Tagline: Smart Tools for Modern Makeup Artists
 
-Frontend:
-- Booking Form
-- Service Catalog
-- Contact Page
-4. Database Structure
-Users (id, name, email, password, role)
-Services (id, name, price, duration)
-Bookings (id, user_id, service_id, date, status)
-Customers (id, name, phone, email)
-Payments (id, booking_id, amount, status)
-Reports (generated dynamically)
-5. API Integration
-Google Calendar API:
-- Sync bookings automatically
-- Create events when booking confirmed
-- Reminder notifications
-6. UI/UX Recommendation
-Use soft feminine colors (pink, nude, gold)
-Dashboard with cards for quick stats
-Calendar-based scheduling view
-Mobile-first design
-Simple booking flow (3 steps: Choose Service → Select Date → Confirm)
-7. Technology Stack
-- Backend: Laravel 11
-- Frontend: Blade / Vue.js
-- Database: MySQL
-- API: Google Calendar API
-- Hosting: VPS / Cloud (AWS, DigitalOcean)
-8. Development Phases
-Phase 1: Core system (auth, services, bookings)
-Phase 2: Calendar integration
-Phase 3: Payment + reporting
-Phase 4: Optimization & scaling
-9. Future Improvements
-- Mobile App (Flutter)
-- Multi-MUA support
-- AI-based scheduling suggestions
-- Marketing tools (promo, discount codes)
+## 1. Gambaran Sistem
+Glam Flow adalah platform manajemen bisnis MUA berbasis web untuk:
+- layanan,
+- pelanggan,
+- booking,
+- kalender kerja,
+- pembayaran,
+- laporan.
+
+## 2. Modul Inti
+- Dashboard Admin
+- Services
+- Customers
+- Bookings
+- Calendar
+- Payments
+- Reports
+- Onboarding
+- Public Booking Form
+
+## 3. Multi-Tenant
+Setiap data tenant dipisahkan dengan `tenant_id` + `TenantScope`.
+
+## 4. Arsitektur Paket SaaS
+Paket tersedia:
+- Free
+- Pro
+- Premium
+
+Aturan paket dipusatkan di:
+- [`config/plans.php`](config/plans.php)
+
+Layanan domain paket:
+- [`app/Services/PlanService.php`](app/Services/PlanService.php)
+- [`app/Services/SubscriptionService.php`](app/Services/SubscriptionService.php)
+
+## 5. Alur Paket (Source of Truth)
+1. User memilih paket di halaman pricing.
+2. Paket tervalidasi saat registrasi.
+3. Subscription dibuat berdasarkan `config/plans.php` (tanpa masa trial).
+4. Enforcement kuota booking dilakukan di `SubscriptionService`.
+5. UI menampilkan status paket + kuota pada onboarding, dashboard, billing.
+
+## 6. Aturan UX Paket
+- Informasi paket harus konsisten antar halaman.
+- Terminologi paket dan kuota tidak boleh berbeda.
+- Error kuota harus jelas dan disertai arahan upgrade.
+
+## 7. Uji Kualitas Paket
+Wajib ada test:
+- Free kena limit booking total.
+- Pro/Premium tidak kena limit Free.
+- Alur onboarding tetap aman setelah enforcement paket.
+
+## 8. Kalender & Notifikasi Booking Besok
+- Halaman kalender menampilkan panel `Jadwal Besok` dengan quick action:
+  - Detail booking.
+  - Konfirmasi booking (untuk status menunggu).
+  - Hubungi pelanggan via WhatsApp.
+- Notifikasi booking besok bersifat opt-in per user melalui profil (`notify_tomorrow_booking`).
+- Navbar menampilkan badge notifikasi pada ikon kalender jika ada booking besok dan notifikasi aktif.
+- Reminder otomatis H-1 diproses command terjadwal:
+  - `bookings:send-tomorrow-reminders` (default daily `18:00`).
+- Auto-settle pembayaran booking terlewat diproses command terjadwal:
+  - `payments:auto-settle-past-service` (default setiap `15` menit).
+
+## 9. Aturan Siklus Booking & Kuota
+- Booking dengan tanggal layanan yang sudah berlalu menjadi read-only:
+  - tidak bisa `edit`,
+  - tidak bisa `hapus`,
+  - hanya bisa dilihat detailnya.
+- Kuota paket menggunakan perhitungan kumulatif (`bookings_consumed_total`) agar:
+  - setiap booking yang pernah dibuat tetap tercatat sebagai pemakaian,
+  - menghapus booking tidak mengembalikan kuota.
+
+## 10. Arsitektur Pembayaran Booking
+- CTA di halaman booking menggunakan label `Pembayaran` untuk mengarahkan user ke modul pembayaran booking terkait.
+- Pembayaran booking menggunakan skema bertahap:
+  - Tahap 1: DP minimum wajib dibayar.
+  - Nominal DP dapat disesuaikan manual per booking.
+  - Tahap 2: Pelunasan manual bisa dilakukan kapan saja selama layanan belum lewat.
+- Guard proses:
+  - Booking tidak boleh `confirmed` jika DP belum dibayar.
+  - Pelunasan manual tidak dapat diproses jika booking `canceled` atau tanggal layanan sudah lewat.
+  - Booking non-canceled yang sudah lewat tanggal layanan akan otomatis ditandai `Lunas` (scheduled command).
+  - Aksi `Batal` pada modul pembayaran membatalkan booking tanpa menghapus pemasukan DP yang sudah diterima.
+  - Pada detail booking hanya ada CTA `Pembayaran` (tanpa tombol `Bayar` terpisah).
+  - Booking `canceled` tidak bisa membuka modul pembayaran booking terkait.

@@ -33,7 +33,7 @@ class CustomerController extends Controller
 
         return redirect()
             ->route('admin.customers.index')
-            ->with('success', 'Customer created successfully.');
+            ->with('success', 'Pelanggan berhasil dibuat.');
     }
 
     public function edit(int $customer): View
@@ -50,7 +50,7 @@ class CustomerController extends Controller
 
         return redirect()
             ->route('admin.customers.index')
-            ->with('success', 'Customer updated successfully.');
+            ->with('success', 'Pelanggan berhasil diperbarui.');
     }
 
     public function destroy(int $customer): RedirectResponse
@@ -60,6 +60,6 @@ class CustomerController extends Controller
 
         return redirect()
             ->route('admin.customers.index')
-            ->with('success', 'Customer deleted successfully.');
+            ->with('success', 'Pelanggan berhasil dihapus.');
     }
 }

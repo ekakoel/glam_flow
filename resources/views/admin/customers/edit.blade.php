@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Edit Customer</h2>
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Ubah Pelanggan</h2>
     </x-slot>
 
     <div class="py-8">
@@ -11,14 +11,14 @@
                     @method('PUT')
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Name</label>
+                        <label class="block text-sm font-medium text-gray-700">Nama</label>
                         <input type="text" name="name" value="{{ old('name', $customer->name) }}" class="mt-1 w-full rounded-md border-gray-300">
                         @error('name') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Phone</label>
+                            <label class="block text-sm font-medium text-gray-700">Telepon</label>
                             <input type="text" name="phone" value="{{ old('phone', $customer->phone) }}" class="mt-1 w-full rounded-md border-gray-300">
                             @error('phone') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
@@ -36,11 +36,13 @@
                     </div>
 
                     <div class="flex justify-end gap-3">
-                        <a href="{{ route('admin.customers.index') }}" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700">Cancel</a>
-                        <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700">Update</button>
+                        <a href="{{ route('admin.customers.index') }}" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700">Batal</a>
+                        <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700">Perbarui</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </x-app-layout>
+
+

@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\ReportService;
+use App\Services\SubscriptionService;
 use Illuminate\View\View;
 
 class ReportController extends Controller
 {
     public function __construct(
-        private readonly ReportService $reportService
+        private readonly ReportService $reportService,
+        private readonly SubscriptionService $subscriptionService
     ) {
     }
 
@@ -24,6 +26,7 @@ class ReportController extends Controller
             'pendingCount' => $summary['pending_count'],
             'conversionRate' => $summary['conversion_rate'],
             'totalBookings' => $summary['total_bookings'],
+            'hasAdvancedReports' => $this->subscriptionService->canAccessFeatureForUser((int) auth()->id(), 'advanced_reports'),
         ]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\Subscription;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -23,9 +24,13 @@ class RegistrationTest extends TestCase
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
+            'plan' => Subscription::PLAN_FREE,
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('onboarding.index', absolute: false));
+        $this->assertDatabaseHas('subscriptions', [
+            'plan' => Subscription::PLAN_FREE,
+        ]);
     }
 }

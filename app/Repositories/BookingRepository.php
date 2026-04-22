@@ -11,7 +11,7 @@ class BookingRepository
     public function paginate(int $perPage = 10): LengthAwarePaginator
     {
         return Booking::query()
-            ->with(['customer', 'service', 'payment', 'bookingItems.service'])
+            ->with(['customer', 'service', 'payment', 'bookingItems.service', 'tenant'])
             ->latest('booking_date')
             ->latest('booking_time')
             ->paginate($perPage);
@@ -20,7 +20,7 @@ class BookingRepository
     public function findOrFail(int $id): Booking
     {
         return Booking::query()
-            ->with(['customer', 'service', 'payment', 'bookingItems.service'])
+            ->with(['customer', 'service', 'payment', 'bookingItems.service', 'tenant'])
             ->findOrFail($id);
     }
 

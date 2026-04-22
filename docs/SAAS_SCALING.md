@@ -1,4 +1,6 @@
-# SaaS Scaling Readiness
+# Glam Flow SaaS Scaling Readiness
+
+> Smart Tools for Modern Makeup Artists
 
 ## Multi Team
 - Introduce `teams` and `team_members` tables.
@@ -14,3 +16,10 @@
 - Outbound webhook subscriptions table.
 - Queue-based delivery workers.
 - Signature validation and replay protection.
+
+## Plan Governance
+- Tetapkan `config/plans.php` sebagai satu-satunya sumber aturan paket.
+- Hindari hardcode harga/limit/fitur di controller atau blade.
+- Simpan perubahan paket sebagai changelog produk agar tim support bisa menjelaskan perubahan ke user.
+- Tambahkan regression test setiap kali ada perubahan limit/feature flag paket.
+

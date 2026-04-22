@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Booking;
+use App\Rules\GoogleMapsLinkOrText;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Database\Query\Builder;
@@ -37,7 +38,7 @@ class StoreBookingRequest extends FormRequest
             'services.*.people_count' => ['required', 'integer', 'min:1', 'max:50'],
             'booking_date' => ['required', 'date'],
             'booking_time' => ['required', 'date_format:H:i'],
-            'location' => ['nullable', 'string', 'max:255'],
+            'location' => ['nullable', 'string', 'max:500', new GoogleMapsLinkOrText()],
             'status' => [
                 'required',
                 Rule::in([

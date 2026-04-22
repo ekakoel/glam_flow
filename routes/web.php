@@ -6,23 +6,32 @@ use App\Http\Controllers\Admin\CalendarController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Controllers\Admin\PublicBookingFormController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ServiceController;
-use App\Http\Controllers\Admin\TenantController;
+use App\Http\Controllers\Backend\AuditLogController;
+use App\Http\Controllers\Backend\DashboardController as BackendDashboardController;
+use App\Http\Controllers\Backend\PlanManagementController;
+use App\Http\Controllers\Backend\TenantManagementController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\PublicBookingController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\GoogleCalendarAuthController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [LandingController::class, 'home'])->name('landing.home');
+Route::get('/', function () {
+    return redirect()->route('onboarding.index');
+});
+Route::get('/welcome', [LandingController::class, 'home'])->name('landing.home');
 Route::get('/pricing', [LandingController::class, 'pricing'])->name('landing.pricing');
 Route::get('/features', [LandingController::class, 'features'])->name('landing.features');
 
 Route::get('/dashboard', function () {
     return redirect()->route('admin.dashboard');
-})->middleware(['auth', 'verified', 'subscription'])->name('dashboard');
+})->middleware(['auth', 'not_suspended', 'verified', 'subscription'])->name('dashboard');
 
-Route::middleware(['auth', 'subscription'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'not_suspended', 'subscription'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
     Route::get('/calendar/events', [CalendarController::class, 'events'])->name('calendar.events');
@@ -31,24 +40,36 @@ Route::middleware(['auth', 'subscription'])->prefix('admin')->name('admin.')->gr
     Route::resource('services', ServiceController::class)->except('show');
     Route::resource('customers', CustomerController::class)->except('show');
     Route::get('/bookings/{booking}/invoice', [BookingController::class, 'invoice'])->name('bookings.invoice');
+    Route::get('/bookings/{booking}/invoice/preview', [BookingController::class, 'invoicePreview'])->name('bookings.invoice.preview');
     Route::post('/bookings/{booking}/pay-now', [BookingController::class, 'payNow'])->name('bookings.pay-now');
+    Route::post('/bookings/{booking}/reschedule', [BookingController::class, 'reschedule'])->name('bookings.reschedule');
+    Route::patch('/bookings/{booking}/confirm', [BookingController::class, 'confirm'])->name('bookings.confirm');
+    Route::get('/booking-links', [PublicBookingFormController::class, 'index'])->name('booking-links.index');
+    Route::post('/booking-links', [PublicBookingFormController::class, 'store'])->name('booking-links.store');
+    Route::patch('/booking-links/{publicBookingForm}/extend', [PublicBookingFormController::class, 'extend'])->name('booking-links.extend');
+    Route::patch('/booking-links/{publicBookingForm}/deactivate', [PublicBookingFormController::class, 'deactivate'])->name('booking-links.deactivate');
     Route::resource('bookings', BookingController::class);
 
     Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::patch('/payments/{payment}', [PaymentController::class, 'update'])->name('payments.update');
+    Route::patch('/payments/{payment}/pricing', [PaymentController::class, 'updatePricing'])->name('payments.update-pricing');
+    Route::patch('/payments/{payment}/mark-dp-paid', [PaymentController::class, 'markDpPaid'])->name('payments.mark-dp-paid');
+    Route::patch('/payments/{payment}/mark-settled', [PaymentController::class, 'markSettled'])->name('payments.mark-settled');
+    Route::patch('/payments/{payment}/cancel-booking', [PaymentController::class, 'cancelBooking'])->name('payments.cancel-booking');
     Route::patch('/payments/{payment}/mark-paid', [PaymentController::class, 'markAsPaid'])->name('payments.mark-paid');
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
-    Route::middleware('super_admin')->group(function () {
-        Route::get('/tenants', [TenantController::class, 'index'])->name('tenants.index');
-    });
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'not_suspended'])->group(function () {
+    Route::get('/google/redirect', [GoogleCalendarAuthController::class, 'redirect'])->name('google.redirect');
+    Route::get('/google/callback', [GoogleCalendarAuthController::class, 'callback'])->name('google.callback');
+
     Route::get('/onboarding', [OnboardingController::class, 'index'])->name('onboarding.index');
     Route::post('/onboarding/profile', [OnboardingController::class, 'updateProfile'])->name('onboarding.profile');
     Route::post('/onboarding/service', [OnboardingController::class, 'storeFirstService'])->name('onboarding.service');
+    Route::post('/onboarding/customer', [OnboardingController::class, 'storeFirstCustomer'])->name('onboarding.customer');
     Route::post('/onboarding/booking', [OnboardingController::class, 'storeFirstBooking'])->name('onboarding.booking');
     Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
 
@@ -56,5 +77,31 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+Route::middleware('throttle:12,1')->group(function () {
+    Route::get('/book/{token}', [PublicBookingController::class, 'show'])->name('public.booking.show');
+    Route::post('/book/{token}', [PublicBookingController::class, 'store'])->name('public.booking.store');
+});
+
+Route::middleware(['auth', 'not_suspended', 'super_admin'])
+    ->prefix('backend')
+    ->name('backend.')
+    ->group(function () {
+        Route::get('/', [BackendDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/tenants', [TenantManagementController::class, 'index'])->name('tenants.index');
+        Route::get('/tenants/create', [TenantManagementController::class, 'create'])->name('tenants.create');
+        Route::post('/tenants', [TenantManagementController::class, 'store'])->name('tenants.store');
+        Route::get('/tenants/{tenant}/edit', [TenantManagementController::class, 'edit'])->name('tenants.edit');
+        Route::put('/tenants/{tenant}', [TenantManagementController::class, 'update'])->name('tenants.update');
+        Route::delete('/tenants/{tenant}', [TenantManagementController::class, 'destroy'])->name('tenants.destroy');
+        Route::patch('/tenants/{tenant}/subscription', [TenantManagementController::class, 'updateSubscription'])->name('tenants.subscription.update');
+        Route::patch('/tenants/{tenant}/role', [TenantManagementController::class, 'updateRole'])->name('tenants.role.update');
+        Route::patch('/tenants/{tenant}/suspend', [TenantManagementController::class, 'updateSuspend'])->name('tenants.suspend.update');
+        Route::patch('/tenants/{tenant}/password-reset', [TenantManagementController::class, 'resetPassword'])->name('tenants.password-reset');
+        Route::get('/plans', [PlanManagementController::class, 'index'])->name('plans.index');
+        Route::put('/plans/{planKey}', [PlanManagementController::class, 'update'])->name('plans.update');
+        Route::delete('/plans/{planKey}', [PlanManagementController::class, 'reset'])->name('plans.reset');
+        Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
+    });
 
 require __DIR__.'/auth.php';

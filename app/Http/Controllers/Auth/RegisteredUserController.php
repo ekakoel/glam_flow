@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\Subscription;
 use App\Models\User;
 use App\Services\NotificationService;
+use App\Services\PlanService;
 use App\Services\SubscriptionService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -22,16 +22,13 @@ class RegisteredUserController extends Controller
     /**
      * Display the registration view.
      */
-    public function create(): View
+    public function create(PlanService $planService): View
     {
-        $plan = request()->query('plan', Subscription::PLAN_FREE);
-        $allowedPlans = [Subscription::PLAN_FREE, Subscription::PLAN_PRO, Subscription::PLAN_PREMIUM];
-        if (! in_array($plan, $allowedPlans, true)) {
-            $plan = Subscription::PLAN_FREE;
-        }
+        $plan = $planService->normalizePlan(request()->query('plan', $planService->defaultPlan()));
 
         return view('auth.register', [
             'selectedPlan' => $plan,
+            'availablePlans' => $planService->all(),
         ]);
     }
 
@@ -42,17 +39,15 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $plan = $request->input('plan', $request->query('plan', Subscription::PLAN_FREE));
+        $planService = app(PlanService::class);
+        $subscriptionService = app(SubscriptionService::class);
+        $plan = $planService->normalizePlan($request->input('plan', $request->query('plan', $planService->defaultPlan())));
 
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'plan' => ['required', Rule::in([
-                Subscription::PLAN_FREE,
-                Subscription::PLAN_PRO,
-                Subscription::PLAN_PREMIUM,
-            ])],
+            'plan' => ['required', Rule::in($planService->allowedPlans())],
         ]);
 
         $user = User::create([
@@ -64,7 +59,7 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         Auth::login($user);
-        $subscription = app(SubscriptionService::class)->createTrialForUser($user->id, $plan, 7);
+        $subscription = $subscriptionService->createTrialForUser($user->id, $plan, $planService->trialDays());
         app(NotificationService::class)->sendWelcomeMessage($user, $subscription);
 
         return redirect('/onboarding');

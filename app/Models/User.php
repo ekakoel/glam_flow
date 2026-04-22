@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -25,6 +27,20 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'is_suspended',
+        'suspended_at',
+        'suspended_reason',
+        'studio_name',
+        'studio_location',
+        'studio_maps_link',
+        'logo_path',
+        'payment_bank_name',
+        'payment_account_name',
+        'payment_account_number',
+        'payment_contact',
+        'payment_instructions',
+        'notify_tomorrow_booking',
+        'onboarding_completed_at',
     ];
 
     /**
@@ -47,6 +63,10 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_suspended' => 'boolean',
+            'suspended_at' => 'datetime',
+            'notify_tomorrow_booking' => 'boolean',
+            'onboarding_completed_at' => 'datetime',
         ];
     }
 
@@ -70,13 +90,79 @@ class User extends Authenticatable
         return $this->hasMany(Payment::class, 'tenant_id');
     }
 
+    public function publicBookingForms(): HasMany
+    {
+        return $this->hasMany(PublicBookingForm::class, 'tenant_id');
+    }
+
+    public function paymentAccounts(): HasMany
+    {
+        return $this->hasMany(TenantPaymentAccount::class, 'tenant_id')
+            ->orderByDesc('is_primary')
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    }
+
     public function subscription(): HasOne
     {
         return $this->hasOne(Subscription::class);
     }
 
+    public function googleCalendarToken(): HasOne
+    {
+        return $this->hasOne(GoogleCalendarToken::class);
+    }
+
     public function isSuperAdmin(): bool
     {
         return $this->role === 'super_admin';
+    }
+
+    public function isSuspended(): bool
+    {
+        return (bool) $this->is_suspended;
+    }
+
+    public function hasCompletedOnboarding(): bool
+    {
+        if ($this->onboarding_completed_at !== null) {
+            return true;
+        }
+
+        return $this->services()->exists()
+            && $this->customers()->exists()
+            && $this->bookings()->exists();
+    }
+
+    public function markOnboardingCompleted(): void
+    {
+        if ($this->onboarding_completed_at !== null) {
+            return;
+        }
+
+        $this->forceFill([
+            'onboarding_completed_at' => now(),
+        ])->save();
+    }
+
+    public function logoUrl(): ?string
+    {
+        if (! $this->logo_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->logo_path);
+    }
+
+    public function primaryPaymentAccount(): ?TenantPaymentAccount
+    {
+        if ($this->relationLoaded('paymentAccounts')) {
+            /** @var Collection<int, TenantPaymentAccount> $accounts */
+            $accounts = $this->getRelation('paymentAccounts');
+
+            return $accounts->first();
+        }
+
+        return $this->paymentAccounts()->first();
     }
 }

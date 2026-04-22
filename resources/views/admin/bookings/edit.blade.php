@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Edit Booking</h2>
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Ubah Booking</h2>
     </x-slot>
 
     <div class="py-8">
@@ -12,9 +12,9 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Customer</label>
+                            <label class="block text-sm font-medium text-gray-700">Pelanggan</label>
                             <select name="customer_id" class="mt-1 w-full rounded-md border-gray-300">
-                                <option value="">Select customer</option>
+                                <option value="">Pilih pelanggan</option>
                                 @foreach ($customers as $customer)
                                     <option value="{{ $customer->id }}" @selected(old('customer_id', $booking->customer_id) == $customer->id)>
                                         {{ $customer->name }} ({{ $customer->phone }})
@@ -24,9 +24,9 @@
                             @error('customer_id') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Service</label>
+                            <label class="block text-sm font-medium text-gray-700">Layanan</label>
                             <select name="service_id" id="service_id" class="mt-1 w-full rounded-md border-gray-300">
-                                <option value="">Select service</option>
+                                <option value="">Pilih layanan</option>
                                 @foreach ($services as $service)
                                     <option value="{{ $service->id }}" data-duration="{{ $service->duration }}" @selected(old('service_id', $booking->service_id) == $service->id)>
                                         {{ $service->name }} - Rp {{ number_format($service->price, 0, ',', '.') }}
@@ -39,26 +39,26 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Date</label>
+                            <label class="block text-sm font-medium text-gray-700">Tanggal</label>
                             <input type="date" name="booking_date" value="{{ old('booking_date', $booking->booking_date?->format('Y-m-d')) }}" class="mt-1 w-full rounded-md border-gray-300">
                             @error('booking_date') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Time</label>
+                            <label class="block text-sm font-medium text-gray-700">Waktu</label>
                             <input type="time" id="booking_time" name="booking_time" value="{{ old('booking_time', substr((string) $booking->booking_time, 0, 5)) }}" class="mt-1 w-full rounded-md border-gray-300">
                             @error('booking_time') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Estimated End Time</label>
+                        <label class="block text-sm font-medium text-gray-700">Perkiraan Waktu Selesai</label>
                         <input type="text" id="estimated_end_time" readonly class="mt-1 w-full rounded-md border-gray-200 bg-gray-50 text-gray-700" value="{{ substr((string) $booking->end_time, 0, 5) }}">
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Location</label>
-                            <input type="text" name="location" value="{{ old('location', $booking->location) }}" class="mt-1 w-full rounded-md border-gray-300">
+                            <label class="block text-sm font-medium text-gray-700">Lokasi</label>
+                            <input type="text" name="location" value="{{ old('location', $booking->location) }}" placeholder="Alamat atau short Google Maps link" class="mt-1 w-full rounded-md border-gray-300">
                             @error('location') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
@@ -75,14 +75,14 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Notes</label>
+                        <label class="block text-sm font-medium text-gray-700">Catatan</label>
                         <textarea name="notes" rows="4" class="mt-1 w-full rounded-md border-gray-300">{{ old('notes', $booking->notes) }}</textarea>
                         @error('notes') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="flex justify-end gap-3">
-                        <a href="{{ route('admin.bookings.index') }}" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700">Cancel</a>
-                        <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700">Update</button>
+                        <a href="{{ route('admin.bookings.index') }}" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700">Batal</a>
+                        <button type="submit" class="px-4 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700">Perbarui</button>
                     </div>
                 </form>
             </div>
@@ -116,3 +116,5 @@
         });
     </script>
 </x-app-layout>
+
+

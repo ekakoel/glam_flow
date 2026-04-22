@@ -18,11 +18,13 @@ class Subscription extends Model
         'user_id',
         'plan',
         'expired_at',
+        'bookings_consumed_total',
     ];
 
     protected $casts = [
         'user_id' => 'integer',
         'expired_at' => 'datetime',
+        'bookings_consumed_total' => 'integer',
     ];
 
     public function user(): BelongsTo

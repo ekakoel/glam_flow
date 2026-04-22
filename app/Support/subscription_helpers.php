@@ -7,12 +7,13 @@ if (! function_exists('getUserPlan')) {
     function getUserPlan(?User $user = null): string
     {
         $user ??= auth()->user();
+        $defaultPlan = (string) config('plans.default', Subscription::PLAN_FREE);
 
         if (! $user) {
-            return Subscription::PLAN_FREE;
+            return $defaultPlan;
         }
 
-        return $user->subscription?->plan ?? Subscription::PLAN_FREE;
+        return $user->subscription?->plan ?? $defaultPlan;
     }
 }
 

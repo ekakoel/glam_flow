@@ -42,4 +42,11 @@ return [
         'snap_url' => env('MIDTRANS_SNAP_URL', 'https://app.sandbox.midtrans.com/snap/v2/vtweb'),
     ],
 
+    'google_calendar' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect_uri' => env('GOOGLE_REDIRECT_URI'),
+        'calendar_id' => env('GOOGLE_CALENDAR_ID', 'primary'),
+    ],
+
 ];

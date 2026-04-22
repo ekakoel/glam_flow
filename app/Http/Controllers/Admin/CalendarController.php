@@ -24,9 +24,14 @@ class CalendarController extends Controller
 
     public function index(): View
     {
+        $tomorrowDate = now()->addDay()->toDateString();
+        $tomorrowBookings = $this->bookingService->getBookingsForDate($tomorrowDate);
+
         return view('admin.calendar.index', [
             'services' => $this->serviceService->allForSelect(),
             'customers' => $this->customerService->allForSelect(),
+            'tomorrowDate' => $tomorrowDate,
+            'tomorrowBookings' => $tomorrowBookings,
         ]);
     }
 
@@ -59,7 +64,7 @@ class CalendarController extends Controller
         }
 
         return response()->json([
-            'message' => 'Booking created successfully.',
+            'message' => 'Booking berhasil dibuat.',
             'booking_id' => $booking->id,
         ], 201);
     }
@@ -77,7 +82,7 @@ class CalendarController extends Controller
         }
 
         return response()->json([
-            'message' => 'Booking rescheduled successfully.',
+            'message' => 'Jadwal booking berhasil diubah.',
             'booking_id' => $updatedBooking->id,
         ]);
     }
