@@ -7,6 +7,7 @@ use App\Repositories\ServiceRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
+use InvalidArgumentException;
 
 class ServiceService
 {
@@ -44,6 +45,16 @@ class ServiceService
 
     public function delete(Service $service): void
     {
+        $service->loadCount(['bookings', 'bookingItems']);
+        $usageCount = (int) (($service->bookings_count ?? 0) + ($service->booking_items_count ?? 0));
+
+        if ($usageCount > 0) {
+            throw new InvalidArgumentException(
+                'Layanan tidak dapat dihapus karena sudah dipakai pada booking. '
+                .'Ubah layanan di booking terlebih dahulu atau buat layanan baru sebagai pengganti.'
+            );
+        }
+
         $this->serviceRepository->delete($service);
     }
 }

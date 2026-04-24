@@ -6,7 +6,7 @@
     <title>Harga Paket - {{ config('app.name', 'Glam Flow') }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=manrope:400,500,600,700,800&family=playfair-display:600,700&display=swap" rel="stylesheet" />
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.vite-assets')
     <style>
         :root {
             --ink: #1f2937;
@@ -88,3 +88,4 @@
     </main>
 </body>
 </html>
+

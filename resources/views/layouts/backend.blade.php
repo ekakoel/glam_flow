@@ -7,7 +7,7 @@
         <title>{{ config('app.name', 'Glam Flow') }} | Backend</title>
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @include('partials.vite-assets')
     </head>
     <body class="bg-stone-100 font-sans text-stone-900 antialiased">
         <header class="sticky top-0 z-40 border-b border-stone-200 bg-white/95 backdrop-blur">
@@ -50,3 +50,4 @@
         </main>
     </body>
 </html>
+

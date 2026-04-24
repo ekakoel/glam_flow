@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Tautan Booking Kedaluwarsa</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.vite-assets')
 </head>
 <body class="font-sans bg-gradient-to-b from-rose-50 via-amber-50 to-white min-h-screen">
     <main class="py-16 px-[18px] sm:px-6">
@@ -17,4 +17,5 @@
     </main>
 </body>
 </html>
+
 

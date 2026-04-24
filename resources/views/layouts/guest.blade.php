@@ -14,7 +14,7 @@
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @include('partials.vite-assets')
     </head>
     <body class="font-sans text-stone-900 antialiased bg-rose-50">
         <div class="min-h-screen relative overflow-hidden">
@@ -63,3 +63,4 @@
         </div>
     </body>
 </html>
+

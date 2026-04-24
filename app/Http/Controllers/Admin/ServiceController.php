@@ -7,6 +7,7 @@ use App\Http\Requests\StoreServiceRequest;
 use App\Services\ServiceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use InvalidArgumentException;
 
 class ServiceController extends Controller
 {
@@ -56,7 +57,14 @@ class ServiceController extends Controller
     public function destroy(int $service): RedirectResponse
     {
         $model = $this->serviceService->findOrFail($service);
-        $this->serviceService->delete($model);
+
+        try {
+            $this->serviceService->delete($model);
+        } catch (InvalidArgumentException $exception) {
+            return redirect()
+                ->route('admin.services.index')
+                ->withErrors(['service' => $exception->getMessage()]);
+        }
 
         return redirect()
             ->route('admin.services.index')

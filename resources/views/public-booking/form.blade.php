@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Booking Publik</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.vite-assets')
 </head>
 <body class="font-sans bg-gradient-to-b from-rose-50 via-amber-50 to-white min-h-screen">
     <main class="py-10 px-[18px] sm:px-6">
@@ -212,5 +212,6 @@
     </script>
 </body>
 </html>
+
 
 

@@ -1,45 +1,118 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Layanan</h2>
-            <a href="{{ route('admin.services.create') }}" class="px-4 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700">
-                Tambah
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h2 class="text-xl font-semibold leading-tight text-stone-900">Layanan</h2>
+                <p class="mt-1 text-sm text-stone-600">Kelola layanan dengan prioritas tampilan mobile.</p>
+            </div>
+            <a href="{{ route('admin.services.create') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700">
+                + Tambah Layanan
             </a>
         </div>
     </x-slot>
 
-    <div class="py-8">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <div class="py-5 sm:py-8">
+        <div class="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
             @if (session('success'))
-                <div class="mb-4 p-3 rounded-md bg-emerald-100 text-emerald-700">{{ session('success') }}</div>
+                <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    {{ session('success') }}
+                </div>
+            @endif
+            @if ($errors->has('service'))
+                <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                    {{ $errors->first('service') }}
+                </div>
             @endif
 
-            <div class="bg-white shadow rounded-lg overflow-hidden">
-                <div class="hidden md:block overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+            <div class="overflow-hidden rounded-2xl border border-rose-100 bg-white shadow-sm">
+                <div class="space-y-3 p-4 sm:p-5 lg:hidden">
+                    @forelse ($services as $service)
+                        @php
+                            $usageCount = (int) (($service->bookings_count ?? 0) + ($service->booking_items_count ?? 0));
+                            $deletable = $usageCount === 0;
+                        @endphp
+                        <article class="rounded-xl border border-rose-100 bg-rose-50/30 p-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <p class="text-base font-semibold text-stone-900">{{ $service->name }}</p>
+                                    <p class="mt-1 text-sm text-stone-700">Rp {{ number_format((float) $service->price, 0, ',', '.') }}</p>
+                                    <p class="text-sm text-stone-600">{{ (int) $service->duration }} menit</p>
+                                </div>
+                                @if ($usageCount > 0)
+                                    <span class="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                                        Dipakai {{ $usageCount }}x
+                                    </span>
+                                @endif
+                            </div>
+                            <p class="mt-2 text-sm text-stone-600">{{ $service->description ?: '-' }}</p>
+                            <div class="mt-4 grid grid-cols-2 gap-2">
+                                <a href="{{ route('admin.services.edit', $service) }}" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-600">
+                                    Ubah
+                                </a>
+                                <form method="POST" action="{{ route('admin.services.destroy', $service) }}">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button
+                                        type="submit"
+                                        class="inline-flex min-h-11 w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold text-white {{ $deletable ? 'bg-rose-600 hover:bg-rose-700' : 'cursor-not-allowed bg-stone-300' }}"
+                                        @disabled(! $deletable)
+                                        onclick="return confirm('Hapus layanan ini?')"
+                                    >
+                                        Hapus
+                                    </button>
+                                </form>
+                            </div>
+                            @if (! $deletable)
+                                <p class="mt-2 text-xs text-stone-500">Layanan yang sudah dipakai pada booking tidak bisa dihapus agar data riwayat tetap aman.</p>
+                            @endif
+                        </article>
+                    @empty
+                        <div class="rounded-xl border border-dashed border-stone-300 bg-stone-50 p-4 text-sm text-stone-500">
+                            Belum ada layanan. Tambahkan layanan pertama Anda.
+                        </div>
+                    @endforelse
+                </div>
+
+                <div class="hidden overflow-x-auto lg:block">
+                    <table class="min-w-full divide-y divide-stone-200">
+                        <thead class="bg-stone-50">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Harga</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durasi</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Deskripsi</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-stone-500">Nama</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-stone-500">Harga</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-stone-500">Durasi</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-stone-500">Status</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-stone-500">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
+                        <tbody class="divide-y divide-stone-200 bg-white">
                             @forelse ($services as $service)
+                                @php
+                                    $usageCount = (int) (($service->bookings_count ?? 0) + ($service->booking_items_count ?? 0));
+                                    $deletable = $usageCount === 0;
+                                @endphp
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900">{{ $service->name }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900">Rp {{ number_format($service->price, 0, ',', '.') }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900">{{ $service->duration }} min</td>
-                                    <td class="px-4 py-3 text-sm text-gray-600">{{ $service->description ?? '-' }}</td>
+                                    <td class="px-4 py-3 text-sm font-medium text-stone-900">{{ $service->name }}</td>
+                                    <td class="px-4 py-3 text-sm text-stone-800">Rp {{ number_format((float) $service->price, 0, ',', '.') }}</td>
+                                    <td class="px-4 py-3 text-sm text-stone-700">{{ (int) $service->duration }} menit</td>
+                                    <td class="px-4 py-3 text-sm text-stone-700">
+                                        @if ($usageCount > 0)
+                                            <span class="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">Dipakai {{ $usageCount }}x</span>
+                                        @else
+                                            <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">Bisa dihapus</span>
+                                        @endif
+                                    </td>
                                     <td class="px-4 py-3 text-right">
                                         <div class="flex justify-end gap-2">
-                                            <a href="{{ route('admin.services.edit', $service) }}" class="px-3 py-1.5 text-sm bg-amber-500 text-white rounded hover:bg-amber-600">Ubah</a>
+                                            <a href="{{ route('admin.services.edit', $service) }}" class="inline-flex min-h-10 items-center justify-center rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-amber-600">Ubah</a>
                                             <form method="POST" action="{{ route('admin.services.destroy', $service) }}">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700" onclick="return confirm('Hapus layanan ini?')">
+                                                <button
+                                                    type="submit"
+                                                    class="inline-flex min-h-10 items-center justify-center rounded-lg px-3 py-1.5 text-sm font-semibold text-white {{ $deletable ? 'bg-rose-600 hover:bg-rose-700' : 'cursor-not-allowed bg-stone-300' }}"
+                                                    @disabled(! $deletable)
+                                                    onclick="return confirm('Hapus layanan ini?')"
+                                                >
                                                     Hapus
                                                 </button>
                                             </form>
@@ -48,42 +121,18 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">Belum ada layanan.</td>
+                                    <td colspan="5" class="px-4 py-8 text-center text-sm text-stone-500">Belum ada layanan.</td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
-                <div class="md:hidden p-4 space-y-3">
-                    @forelse ($services as $service)
-                        <div class="rounded-xl border border-rose-100 bg-rose-50/40 p-4 shadow-sm">
-                            <p class="text-sm font-semibold text-stone-900">{{ $service->name }}</p>
-                            <p class="mt-1 text-sm text-stone-700">Rp {{ number_format($service->price, 0, ',', '.') }}</p>
-                            <p class="text-sm text-stone-600">{{ $service->duration }} min</p>
-                            <p class="mt-1 text-sm text-stone-600">{{ $service->description ?? '-' }}</p>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <a href="{{ route('admin.services.edit', $service) }}" class="px-3 py-1.5 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600">Ubah</a>
-                                <form method="POST" action="{{ route('admin.services.destroy', $service) }}">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700" onclick="return confirm('Hapus layanan ini?')">
-                                        Hapus
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="rounded-xl border border-dashed border-stone-300 bg-stone-50 p-4 text-sm text-stone-500">
-                            Belum ada layanan.
-                        </div>
-                    @endforelse
-                </div>
-                <div class="p-4">
+
+                <div class="border-t border-stone-100 p-4">
                     {{ $services->links() }}
                 </div>
             </div>
         </div>
     </div>
 </x-app-layout>
-
 

@@ -11,6 +11,7 @@ class ServiceRepository
     public function paginate(int $perPage = 10): LengthAwarePaginator
     {
         return Service::query()
+            ->withCount(['bookings', 'bookingItems'])
             ->latest()
             ->paginate($perPage);
     }
