@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 *.log
 .DS_Store
 .env
@@ -22,3 +23,19 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 mua-system.zip
+=======
+vendor
+composer.lock
+
+# Ignore files with casing conflicts
+src/Compute/HTTPHealthCheck.php
+src/Compute/HTTPSHealthCheck.php
+src/WorkloadManager/SqlserverWorkload.php
+
+# Python for generator
+*.pyc
+*.egg-info
+
+# When running synth.py
+.cache/
+>>>>>>> 92e4b34af565e0598fa90036909c400e86aff91c

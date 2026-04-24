@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Glam Flow (Laravel SaaS)
 
 > Smart Tools for Modern Makeup Artists
@@ -98,3 +99,24 @@ Test matriks paket mencakup:
 
 ## License
 MIT
+=======
+Google PHP API Client Services
+==============================
+
+[Reference Documentation](https://googleapis.github.io/google-api-php-client-services)
+
+**NOTE**: please check to see if the package you'd like to install is available in our
+list of [Google cloud packages](https://cloud.google.com/php/docs/reference) first, as
+these are the recommended libraries.
+
+## Requirements
+
+[Google API PHP Client](https://github.com/googleapis/google-api-php-client/releases)
+
+## Usage
+
+This library is automatically updated daily with new API changes, and tagged weekly.
+It is installed as part of the
+[Google API PHP Client](https://github.com/googleapis/google-api-php-client/releases)
+library via Composer, which will pull down the most recent tag.
+>>>>>>> 92e4b34af565e0598fa90036909c400e86aff91c
