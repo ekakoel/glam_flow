@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
+use App\Models\SubscriptionUpgradeRequest;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Services\BackendAuditLogService;
@@ -11,6 +12,7 @@ use App\Services\SubscriptionService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -98,15 +100,22 @@ class TenantManagementController extends Controller
     public function edit(User $tenant): View
     {
         abort_if($tenant->isSuperAdmin(), 404);
+        $this->expireUnverifiedRequests((int) $tenant->id);
 
         $tenant->loadCount(['services', 'customers', 'bookings']);
         $subscription = $this->subscriptionService->ensureUserSubscription((int) $tenant->id);
+        $upgradeRequests = SubscriptionUpgradeRequest::query()
+            ->where('tenant_id', (int) $tenant->id)
+            ->with('reviewer:id,name,email')
+            ->latest()
+            ->get();
 
         return view('backend.tenants.edit', [
             'tenant' => $tenant,
             'subscription' => $subscription,
             'plans' => $this->planService->allowedPlans(),
             'roles' => $this->allowedRoles(),
+            'upgradeRequests' => $upgradeRequests,
         ]);
     }
 
@@ -306,11 +315,132 @@ class TenantManagementController extends Controller
             ->with('success', 'Password tenant berhasil direset. Password baru: '.$newPassword);
     }
 
+    public function approveUpgradeRequest(Request $request, User $tenant, SubscriptionUpgradeRequest $upgradeRequest): RedirectResponse
+    {
+        abort_if($tenant->isSuperAdmin(), 404);
+        abort_if((int) $upgradeRequest->tenant_id !== (int) $tenant->id, 404);
+        $this->expireUnverifiedRequests((int) $tenant->id);
+        $upgradeRequest->refresh();
+
+        if ($upgradeRequest->status !== SubscriptionUpgradeRequest::STATUS_PENDING_VERIFICATION) {
+            return redirect()
+                ->route('backend.tenants.edit', $tenant)
+                ->with('error', 'Permintaan upgrade ini sudah diproses sebelumnya.');
+        }
+
+        $validated = $request->validate([
+            'review_note' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $this->subscriptionService->upgradePlan(
+            (int) $tenant->id,
+            (string) $upgradeRequest->requested_plan
+        );
+
+        $tenant->forceFill([
+            'plan_activation_notice_until' => now()->addDay(),
+            'plan_activation_notice_plan' => (string) $upgradeRequest->requested_plan,
+        ])->save();
+
+        $upgradeRequest->forceFill([
+            'status' => SubscriptionUpgradeRequest::STATUS_APPROVED,
+            'reviewed_by' => (int) auth()->id(),
+            'reviewed_at' => now(),
+            'approved_at' => now(),
+            'review_note' => trim((string) ($validated['review_note'] ?? '')) ?: null,
+        ])->save();
+
+        $this->auditLogService->log(
+            action: 'tenant_upgrade_request_approved',
+            targetType: User::class,
+            targetId: (int) $tenant->id,
+            targetLabel: $tenant->email,
+            meta: [
+                'request_id' => (int) $upgradeRequest->id,
+                'from_plan' => $upgradeRequest->current_plan,
+                'to_plan' => $upgradeRequest->requested_plan,
+            ],
+            request: $request
+        );
+
+        return redirect()
+            ->route('backend.tenants.edit', $tenant)
+            ->with('success', 'Permintaan upgrade disetujui dan paket tenant berhasil diperbarui.');
+    }
+
+    public function rejectUpgradeRequest(Request $request, User $tenant, SubscriptionUpgradeRequest $upgradeRequest): RedirectResponse
+    {
+        abort_if($tenant->isSuperAdmin(), 404);
+        abort_if((int) $upgradeRequest->tenant_id !== (int) $tenant->id, 404);
+        $this->expireUnverifiedRequests((int) $tenant->id);
+        $upgradeRequest->refresh();
+
+        if ($upgradeRequest->status !== SubscriptionUpgradeRequest::STATUS_PENDING_VERIFICATION) {
+            return redirect()
+                ->route('backend.tenants.edit', $tenant)
+                ->with('error', 'Permintaan upgrade ini sudah diproses sebelumnya.');
+        }
+
+        $validated = $request->validate([
+            'review_note' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $upgradeRequest->forceFill([
+            'status' => SubscriptionUpgradeRequest::STATUS_REJECTED,
+            'reviewed_by' => (int) auth()->id(),
+            'reviewed_at' => now(),
+            'review_note' => trim((string) $validated['review_note']),
+        ])->save();
+
+        $this->auditLogService->log(
+            action: 'tenant_upgrade_request_rejected',
+            targetType: User::class,
+            targetId: (int) $tenant->id,
+            targetLabel: $tenant->email,
+            meta: [
+                'request_id' => (int) $upgradeRequest->id,
+                'from_plan' => $upgradeRequest->current_plan,
+                'to_plan' => $upgradeRequest->requested_plan,
+            ],
+            request: $request
+        );
+
+        return redirect()
+            ->route('backend.tenants.edit', $tenant)
+            ->with('success', 'Permintaan upgrade berhasil ditolak.');
+    }
+
     /**
      * @return array<int, string>
      */
     private function allowedRoles(): array
     {
         return ['tenant', 'manager', 'staff'];
+    }
+
+    private function expireUnverifiedRequests(int $tenantId): void
+    {
+        $expiredAt = now()->subDay();
+        $requests = SubscriptionUpgradeRequest::query()
+            ->where('tenant_id', $tenantId)
+            ->whereIn('status', [
+                SubscriptionUpgradeRequest::STATUS_PENDING_PAYMENT,
+                SubscriptionUpgradeRequest::STATUS_PENDING_VERIFICATION,
+            ])
+            ->where('created_at', '<=', $expiredAt)
+            ->get();
+
+        foreach ($requests as $item) {
+            if ($item->proof_path && $item->proof_path !== '-') {
+                Storage::disk('public')->delete($item->proof_path);
+            }
+
+            $item->forceFill([
+                'status' => SubscriptionUpgradeRequest::STATUS_EXPIRED,
+                'reviewed_at' => now(),
+                'reviewed_by' => null,
+                'review_note' => $item->review_note ?: 'Request kedaluwarsa otomatis karena tidak selesai diverifikasi dalam 1x24 jam.',
+            ])->save();
+        }
     }
 }

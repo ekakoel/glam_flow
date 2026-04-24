@@ -110,7 +110,51 @@
                     </div>
                 </div>
 
+                @php
+                    $waRawPhone = preg_replace('/\D+/', '', (string) ($booking->customer->phone ?? '')) ?? '';
+                    if (str_starts_with($waRawPhone, '0')) {
+                        $waRawPhone = '62'.substr($waRawPhone, 1);
+                    } elseif ($waRawPhone !== '' && !str_starts_with($waRawPhone, '62')) {
+                        $waRawPhone = '62'.$waRawPhone;
+                    }
+                    $tenantName = trim((string) ($booking->tenant?->name ?? 'MUA Kami'));
+                    $bookingLocation = trim((string) ($booking->location ?? ''));
+                    $studioMaps = trim((string) ($booking->tenant?->studio_maps_link ?? ''));
+                    $studioAddress = trim((string) ($booking->tenant?->studio_location ?? ''));
+                    $isStudioService = $bookingLocation !== '' && ($bookingLocation === $studioMaps || $bookingLocation === $studioAddress);
+                    if ($isStudioService) {
+                        $studioLocationForCustomer = $studioMaps !== '' ? $studioMaps : ($studioAddress !== '' ? $studioAddress : $bookingLocation);
+                        $waLocationSection =
+                            "- Jenis Layanan: Studio {$tenantName}\n".
+                            "- Lokasi Studio: {$studioLocationForCustomer}\n".
+                            "- Konfirmasi: Lokasi Anda menggunakan layanan {$tenantName} di lokasi berikut (tautan map di atas).\n";
+                    } else {
+                        $homeLocationForCustomer = $bookingLocation !== '' ? $bookingLocation : '-';
+                        $waLocationSection =
+                            "- Jenis Layanan: Home Service\n".
+                            "- Lokasi Home Service: {$homeLocationForCustomer}\n".
+                            "- Konfirmasi: Alamat/lokasi di atas adalah lokasi yang Anda tambahkan pada form booking.\n";
+                    }
+                    $waMessage = rawurlencode(
+                        "Halo {$booking->customer->name},\n".
+                        "Berikut detail booking Anda:\n".
+                        "- Layanan: {$booking->service->name}\n".
+                        "- Jadwal: ".($booking->booking_date?->format('d M Y') ?? '-')." ".substr((string) $booking->booking_time, 0, 5)." - ".substr((string) $booking->end_time, 0, 5)."\n".
+                        "- Jumlah orang: ".((int) ($booking->total_people ?? 1))."\n".
+                        $waLocationSection."\n".
+                        "Ringkasan pembayaran:\n".
+                        "- Total: Rp ".number_format((float) ($payment?->amount ?? 0), 0, ',', '.')."\n".
+                        "- Terbayar: Rp ".number_format((float) ($payment?->paid_amount ?? 0), 0, ',', '.')."\n".
+                        "- Sisa: Rp ".number_format(max(0, (float) (($payment?->amount ?? 0) - ($payment?->paid_amount ?? 0))), 0, ',', '.')."\n\n".
+                        "Invoice akan kami kirimkan sebagai file PDF melalui chat ini. Terima kasih."
+                    );
+                @endphp
                 <div class="mt-6 flex flex-wrap gap-3">
+                    @if($waRawPhone !== '')
+                        <a href="https://wa.me/{{ $waRawPhone }}?text={{ $waMessage }}" target="_blank" rel="noopener noreferrer" class="px-6 py-2.5 rounded-xl bg-green-600 text-white hover:bg-green-700">
+                            WhatsApp
+                        </a>
+                    @endif
                     <a href="{{ route('admin.bookings.invoice.preview', $booking) }}" target="_blank" rel="noopener noreferrer" class="px-6 py-2.5 rounded-xl bg-stone-700 text-white hover:bg-stone-800">
                         Preview Invoice
                     </a>

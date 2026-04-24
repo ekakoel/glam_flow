@@ -38,18 +38,27 @@ class PublicBookingController extends Controller
             ]);
         }
 
+        $tenant = User::query()->find($form->tenant_id);
+        $effectiveTerms = $this->publicBookingFormService->resolveTerms($form, $tenant);
+
         return view('public-booking.form', [
             'form' => $form,
             'services' => $services,
             'token' => $token,
-            'tenant' => User::query()->find($form->tenant_id),
+            'tenant' => $tenant,
+            'effectiveTerms' => $effectiveTerms,
         ]);
     }
 
     public function store(SubmitPublicBookingRequest $request, string $token): RedirectResponse
     {
         try {
-            $this->publicBookingSubmissionService->submit($token, $request->validated());
+            $payload = $request->validated();
+            $payload['terms_accepted_at'] = now();
+            $payload['terms_acceptance_ip'] = $request->ip();
+            $payload['terms_acceptance_user_agent'] = (string) ($request->userAgent() ?? '');
+
+            $this->publicBookingSubmissionService->submit($token, $payload);
         } catch (InvalidArgumentException $exception) {
             return back()
                 ->withInput()
@@ -57,7 +66,22 @@ class PublicBookingController extends Controller
         }
 
         return redirect()
-            ->route('public.booking.show', $token)
-            ->with('success', 'Permintaan booking berhasil dikirim.');
+            ->route('public.booking.thank-you', $token)
+            ->with('submitted_phone', (string) ($payload['phone'] ?? ''));
+    }
+
+    public function thankYou(string $token): View
+    {
+        $form = $this->publicBookingFormService->findByToken($token);
+        if ($form === null) {
+            return view('public-booking.expired', [
+                'message' => 'Tautan booking tidak ditemukan.',
+            ]);
+        }
+
+        return view('public-booking.thank-you', [
+            'token' => $token,
+            'submittedPhone' => (string) session('submitted_phone', ''),
+        ]);
     }
 }

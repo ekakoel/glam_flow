@@ -49,4 +49,12 @@ return [
         'calendar_id' => env('GOOGLE_CALENDAR_ID', 'primary'),
     ],
 
+    'subscription_payment' => [
+        'bank_name' => env('SUBSCRIPTION_PAYMENT_BANK_NAME', 'BCA'),
+        'account_name' => env('SUBSCRIPTION_PAYMENT_ACCOUNT_NAME', 'GLAM FLOW'),
+        'account_number' => env('SUBSCRIPTION_PAYMENT_ACCOUNT_NUMBER', '0000000000'),
+        'contact' => env('SUBSCRIPTION_PAYMENT_CONTACT', '-'),
+        'instructions' => env('SUBSCRIPTION_PAYMENT_INSTRUCTIONS', 'Transfer sesuai nominal paket, lalu unggah bukti pembayaran.'),
+    ],
+
 ];

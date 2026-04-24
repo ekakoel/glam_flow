@@ -32,6 +32,11 @@ class PublicBookingSubmissionService
         }
 
         $tenantId = (int) $form->tenant_id;
+        $tenant = User::query()->find($tenantId);
+        if ($tenant === null) {
+            throw new InvalidArgumentException('Akun tenant tidak ditemukan.');
+        }
+        $terms = $this->publicBookingFormService->resolveTerms($form, $tenant);
         $allowedServiceIds = $this->publicBookingFormService->getAllowedServiceIds($form);
         $serviceId = (int) $data['service_id'];
         if (! in_array($serviceId, $allowedServiceIds, true)) {
@@ -46,10 +51,6 @@ class PublicBookingSubmissionService
         }
 
         $this->subscriptionService->assertBookingCreationAllowed($tenantId);
-        $tenant = User::query()->find($tenantId);
-        if ($tenant === null) {
-            throw new InvalidArgumentException('Akun tenant tidak ditemukan.');
-        }
 
         $peopleCount = max(1, (int) $data['people_count']);
         $bookingTime = $this->normalizeTime($data['booking_time']);
@@ -61,7 +62,7 @@ class PublicBookingSubmissionService
         $this->assertFutureDateTime($bookingDate, $bookingTime);
         $this->assertAvailability($tenantId, $bookingDate, $bookingTime, $endTime);
 
-        $booking = DB::transaction(function () use ($tenantId, $data, $service, $peopleCount, $bookingTime, $endTime, $bookingDate, $resolvedLocation) {
+        $booking = DB::transaction(function () use ($tenantId, $data, $service, $peopleCount, $bookingTime, $endTime, $bookingDate, $resolvedLocation, $terms) {
             $customer = $this->findOrCreateCustomer($tenantId, $data);
 
             $booking = Booking::withoutGlobalScopes()->create([
@@ -75,6 +76,11 @@ class PublicBookingSubmissionService
                 'location' => $resolvedLocation,
                 'status' => Booking::STATUS_PENDING,
                 'notes' => $data['notes'] ?? null,
+                'terms_accepted_at' => $data['terms_accepted_at'] ?? now(),
+                'terms_version' => null,
+                'terms_snapshot' => $terms['title']."\n\n".$terms['content'],
+                'terms_acceptance_ip' => $data['terms_acceptance_ip'] ?? null,
+                'terms_acceptance_user_agent' => $data['terms_acceptance_user_agent'] ?? null,
             ]);
 
             BookingItem::withoutGlobalScopes()->create([
@@ -193,4 +199,5 @@ class PublicBookingSubmissionService
 
         return $location;
     }
+
 }

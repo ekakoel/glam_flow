@@ -17,7 +17,7 @@ class SubmitPublicBookingRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:120'],
-            'phone' => ['required', 'string', 'max:30'],
+            'phone' => ['required', 'string', 'max:30', 'regex:/^(\+?[0-9][0-9\s\-().]{7,20})$/'],
             'email' => ['nullable', 'email', 'max:120'],
             'service_id' => ['required', 'integer'],
             'service_location' => ['required', Rule::in(['home_service', 'studio'])],
@@ -26,6 +26,17 @@ class SubmitPublicBookingRequest extends FormRequest
             'booking_time' => ['required', 'date_format:H:i'],
             'location' => ['nullable', 'required_if:service_location,home_service', 'string', 'max:500', new GoogleMapsLinkOrText()],
             'notes' => ['nullable', 'string'],
+            'terms_accepted' => ['required', 'accepted'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'phone.required' => 'Nomor WhatsApp wajib diisi.',
+            'phone.regex' => 'Nomor WhatsApp tidak valid. Gunakan format seperti 08xxxxxxxxxx atau +62xxxxxxxxxx.',
+            'terms_accepted.required' => 'Anda harus menyetujui Syarat & Ketentuan booking.',
+            'terms_accepted.accepted' => 'Anda harus menyetujui Syarat & Ketentuan booking.',
         ];
     }
 }

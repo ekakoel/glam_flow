@@ -29,6 +29,11 @@ class Booking extends Model
         'end_time',
         'google_event_id',
         'tomorrow_reminder_sent_at',
+        'terms_accepted_at',
+        'terms_version',
+        'terms_snapshot',
+        'terms_acceptance_ip',
+        'terms_acceptance_user_agent',
         'location',
         'status',
         'notes',
@@ -44,6 +49,7 @@ class Booking extends Model
         'end_time' => 'string',
         'google_event_id' => 'string',
         'tomorrow_reminder_sent_at' => 'datetime',
+        'terms_accepted_at' => 'datetime',
     ];
 
     public function service(): BelongsTo

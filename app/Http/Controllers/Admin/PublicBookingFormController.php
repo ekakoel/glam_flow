@@ -20,10 +20,12 @@ class PublicBookingFormController extends Controller
     public function index(): View
     {
         $tenantId = (int) auth()->id();
+        $tenant = auth()->user();
 
         return view('admin.booking-links.index', [
             'forms' => $this->publicBookingFormService->listForTenant($tenantId),
             'services' => Service::query()->orderBy('name')->get(['id', 'name']),
+            'tenant' => $tenant,
         ]);
     }
 
@@ -33,7 +35,9 @@ class PublicBookingFormController extends Controller
         $form = $this->publicBookingFormService->createForTenant(
             $tenantId,
             $request->validated('service_ids'),
-            $request->validated('max_submissions')
+            $request->validated('max_submissions'),
+            $request->validated('terms_title'),
+            $request->validated('terms_content')
         );
 
         return redirect()

@@ -7,6 +7,11 @@
 
     <div class="py-8 bg-gradient-to-b from-rose-50 via-amber-50 to-white min-h-screen">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+            @if($hasPlanActivationNotice ?? false)
+                <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 shadow-sm">
+                    Paket Anda saat ini telah diaktifkan ({{ strtoupper($planActivationNoticePlan ?? $plan) }}), selamat menggunakan layanan kami.
+                </div>
+            @endif
             @php
                 $alertClass = 'bg-yellow-50 border-yellow-200 text-yellow-800';
                 $alertText = 'Paket '.strtoupper($plan).' aktif';
@@ -37,7 +42,6 @@
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <a href="{{ route('billing.index') }}" class="px-5 py-2.5 rounded-xl bg-stone-800 text-white hover:bg-black transition">Upgrade</a>
-                        <a href="{{ route('admin.services.create') }}" class="px-5 py-2.5 rounded-xl border border-stone-300 bg-white text-stone-700 hover:bg-stone-50 transition">Tambah</a>
                     </div>
                 </div>
             </div>

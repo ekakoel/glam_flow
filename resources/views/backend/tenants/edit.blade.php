@@ -110,6 +110,80 @@
         </div>
 
         <article class="rounded-2xl border border-rose-200 bg-rose-50/50 p-5 shadow-sm">
+            <h3 class="text-lg font-semibold text-stone-900">Request Upgrade Tenant</h3>
+            <div class="mt-3 space-y-3">
+                @forelse($upgradeRequests as $requestItem)
+                    @php
+                        $statusLabel = match ($requestItem->status) {
+                            'approved' => 'Disetujui',
+                            'rejected' => 'Ditolak',
+                            'pending_payment' => 'Menunggu Pembayaran',
+                            'expired' => 'Kedaluwarsa',
+                            default => 'Menunggu',
+                        };
+                        $statusClass = match ($requestItem->status) {
+                            'approved' => 'bg-emerald-100 text-emerald-700',
+                            'rejected' => 'bg-red-100 text-red-700',
+                            'pending_payment' => 'bg-blue-100 text-blue-700',
+                            'expired' => 'bg-stone-200 text-stone-700',
+                            default => 'bg-amber-100 text-amber-700',
+                        };
+                    @endphp
+                    <div class="rounded-xl border border-stone-200 bg-white p-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <p class="text-sm font-semibold text-stone-900">
+                                {{ strtoupper($requestItem->current_plan) }} -> {{ strtoupper($requestItem->requested_plan) }}
+                                ({{ $requestItem->requested_price ?? '-' }})
+                            </p>
+                            <span class="rounded-full px-2 py-1 text-xs font-medium {{ $statusClass }}">{{ $statusLabel }}</span>
+                        </div>
+                        <p class="mt-1 text-xs text-stone-600">
+                            Pengirim: {{ $requestItem->payer_name }} | Metode: {{ $requestItem->payment_method }} |
+                            Diajukan: {{ $requestItem->created_at?->format('d M Y H:i') }}
+                        </p>
+                        @if($requestItem->proof_path)
+                            <a href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($requestItem->proof_path) }}" target="_blank" rel="noopener noreferrer" class="inline-flex mt-2 text-sm font-medium text-rose-700 hover:text-rose-800">
+                                Lihat Bukti Pembayaran
+                            </a>
+                        @endif
+                        @if($requestItem->status === 'pending')
+                            <div class="mt-3 grid gap-2 md:grid-cols-2">
+                                <form method="POST" action="{{ route('backend.tenants.upgrade-requests.approve', [$tenant, $requestItem]) }}" class="space-y-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <textarea name="review_note" rows="2" required placeholder="Catatan approval (wajib)" class="w-full rounded-xl border border-stone-300 px-3 py-2 text-xs"></textarea>
+                                    <button type="submit" class="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700">
+                                        Validasi & Setujui Request
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ route('backend.tenants.upgrade-requests.reject', [$tenant, $requestItem]) }}" class="space-y-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <textarea name="review_note" rows="2" required placeholder="Alasan penolakan (wajib)" class="w-full rounded-xl border border-stone-300 px-3 py-2 text-xs"></textarea>
+                                    <button type="submit" class="rounded-xl bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700">
+                                        Tolak Request
+                                    </button>
+                                </form>
+                            </div>
+                        @else
+                            <p class="mt-2 text-xs text-stone-600">
+                                Diproses oleh: {{ $requestItem->reviewer?->name ?? '-' }} |
+                                Waktu review: {{ $requestItem->reviewed_at?->format('d M Y H:i') ?? '-' }}
+                            </p>
+                            @if($requestItem->review_note)
+                                <p class="mt-1 text-xs text-stone-600">Catatan: {{ $requestItem->review_note }}</p>
+                            @endif
+                        @endif
+                    </div>
+                @empty
+                    <div class="rounded-xl border border-dashed border-stone-300 bg-white p-4 text-sm text-stone-600">
+                        Belum ada request upgrade dari tenant ini.
+                    </div>
+                @endforelse
+            </div>
+        </article>
+
+        <article class="rounded-2xl border border-rose-200 bg-rose-50/50 p-5 shadow-sm">
             <h3 class="text-lg font-semibold text-rose-700">Zona Berbahaya</h3>
             <p class="mt-1 text-sm text-rose-700">Hapus tenant akan menghapus seluruh data tenant secara permanen.</p>
             <form method="POST" action="{{ route('backend.tenants.destroy', $tenant) }}" class="mt-4">

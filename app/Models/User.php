@@ -40,6 +40,11 @@ class User extends Authenticatable
         'payment_contact',
         'payment_instructions',
         'notify_tomorrow_booking',
+        'booking_terms_title',
+        'booking_terms_content',
+        'booking_terms_updated_at',
+        'plan_activation_notice_until',
+        'plan_activation_notice_plan',
         'onboarding_completed_at',
     ];
 
@@ -66,6 +71,8 @@ class User extends Authenticatable
             'is_suspended' => 'boolean',
             'suspended_at' => 'datetime',
             'notify_tomorrow_booking' => 'boolean',
+            'booking_terms_updated_at' => 'datetime',
+            'plan_activation_notice_until' => 'datetime',
             'onboarding_completed_at' => 'datetime',
         ];
     }
@@ -101,6 +108,11 @@ class User extends Authenticatable
             ->orderByDesc('is_primary')
             ->orderBy('sort_order')
             ->orderBy('id');
+    }
+
+    public function subscriptionUpgradeRequests(): HasMany
+    {
+        return $this->hasMany(SubscriptionUpgradeRequest::class, 'tenant_id');
     }
 
     public function subscription(): HasOne

@@ -24,6 +24,8 @@ class StorePublicBookingFormRequest extends FormRequest
                     ->where(fn (Builder $query) => $query->where('tenant_id', auth()->id())),
             ],
             'max_submissions' => ['nullable', 'integer', 'min:1', 'max:500'],
+            'terms_title' => ['required', 'string', 'max:120'],
+            'terms_content' => ['required', 'string', 'min:20', 'max:10000'],
         ];
     }
 }

@@ -22,6 +22,62 @@
                 <div class="mb-4 p-4 rounded-xl bg-red-100 text-red-700 border border-red-200">{{ $errors->first('booking') }}</div>
             @endif
 
+            @php
+                $termsTitle = old('booking_terms_title', trim((string) ($tenant?->booking_terms_title ?? '')));
+                $termsContent = old('booking_terms_content', trim((string) ($tenant?->booking_terms_content ?? '')));
+            @endphp
+            <div class="mb-6 bg-white shadow rounded-2xl border border-rose-100 p-6">
+                <h3 class="text-lg font-semibold text-stone-900">T&C Booking</h3>
+                <p class="mt-1 text-sm text-stone-600">Informasi ini tampil sebagai acuan T&C booking tenant dan bisa dipakai sebagai default saat membuat link booking.</p>
+
+                @if($termsTitle !== '' || $termsContent !== '')
+                    <div class="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-4">
+                        <p class="text-sm font-semibold text-stone-800">
+                            {{ $termsTitle !== '' ? $termsTitle : 'Syarat & Ketentuan Booking' }}
+                        </p>
+                        <p class="mt-2 whitespace-pre-line text-sm text-stone-700">
+                            {{ $termsContent !== '' ? $termsContent : '-' }}
+                        </p>
+                        @if($tenant?->booking_terms_updated_at)
+                            <p class="mt-2 text-xs text-stone-500">Terakhir diperbarui: {{ $tenant->booking_terms_updated_at->format('d M Y H:i') }}</p>
+                        @endif
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('admin.bookings.terms.update') }}" class="mt-4 space-y-4">
+                    @csrf
+                    @method('PATCH')
+
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700">Judul T&C</label>
+                        <input
+                            type="text"
+                            name="booking_terms_title"
+                            value="{{ $termsTitle !== '' ? $termsTitle : 'Syarat & Ketentuan Booking' }}"
+                            required
+                            class="mt-1 w-full rounded-xl border-stone-300 focus:border-rose-400 focus:ring-rose-300"
+                        >
+                        @error('booking_terms_title') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700">Isi T&C</label>
+                        <textarea
+                            name="booking_terms_content"
+                            rows="6"
+                            required
+                            class="mt-1 w-full rounded-xl border-stone-300 focus:border-rose-400 focus:ring-rose-300"
+                            placeholder="Contoh: DP tidak dapat dikembalikan jika booking dibatalkan customer."
+                        >{{ $termsContent !== '' ? $termsContent : "1. Booking dianggap valid setelah DP diterima.\n2. Jadwal dapat diubah maksimal H-2 sebelum hari layanan.\n3. DP yang sudah dibayar tidak dapat direfund jika booking dibatalkan customer." }}</textarea>
+                        @error('booking_terms_content') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 transition">
+                        Simpan T&C
+                    </button>
+                </form>
+            </div>
+
             <div class="bg-white shadow rounded-2xl border border-rose-100 overflow-hidden">
                 <div class="hidden md:block overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -54,6 +110,39 @@
                                         'canceled' => 'bg-red-100 text-red-700',
                                         default => 'bg-gray-100 text-gray-700',
                                     };
+                                    $waRawPhone = preg_replace('/\D+/', '', (string) ($booking->customer->phone ?? '')) ?? '';
+                                    if (str_starts_with($waRawPhone, '0')) {
+                                        $waRawPhone = '62'.substr($waRawPhone, 1);
+                                    } elseif ($waRawPhone !== '' && !str_starts_with($waRawPhone, '62')) {
+                                        $waRawPhone = '62'.$waRawPhone;
+                                    }
+                                    $tenantName = trim((string) ($booking->tenant?->name ?? 'MUA Kami'));
+                                    $bookingLocation = trim((string) ($booking->location ?? ''));
+                                    $studioMaps = trim((string) ($booking->tenant?->studio_maps_link ?? ''));
+                                    $studioAddress = trim((string) ($booking->tenant?->studio_location ?? ''));
+                                    $isStudioService = $bookingLocation !== '' && ($bookingLocation === $studioMaps || $bookingLocation === $studioAddress);
+                                    if ($isStudioService) {
+                                        $studioLocationForCustomer = $studioMaps !== '' ? $studioMaps : ($studioAddress !== '' ? $studioAddress : $bookingLocation);
+                                        $waLocationSection =
+                                            "- Jenis Layanan: Studio {$tenantName}\n".
+                                            "- Lokasi Studio: {$studioLocationForCustomer}\n".
+                                            "- Konfirmasi: Lokasi Anda menggunakan layanan {$tenantName} di lokasi berikut (tautan map di atas).\n";
+                                    } else {
+                                        $homeLocationForCustomer = $bookingLocation !== '' ? $bookingLocation : '-';
+                                        $waLocationSection =
+                                            "- Jenis Layanan: Home Service\n".
+                                            "- Lokasi Home Service: {$homeLocationForCustomer}\n".
+                                            "- Konfirmasi: Alamat/lokasi di atas adalah lokasi yang Anda tambahkan pada form booking.\n";
+                                    }
+                                    $waMessage = rawurlencode(
+                                        "Halo {$booking->customer->name},\n".
+                                        "Ini ringkasan booking Anda:\n".
+                                        "- Layanan: {$booking->service->name}\n".
+                                        "- Jadwal: ".($booking->booking_date?->format('d M Y') ?? '-')." ".substr((string) $booking->booking_time, 0, 5)." - ".substr((string) $booking->end_time, 0, 5)."\n".
+                                        $waLocationSection.
+                                        "- Status: {$statusLabel}\n\n".
+                                        "Invoice dan detail lengkap akan kami kirimkan melalui chat ini. Silakan hubungi kami jika ada penyesuaian jadwal."
+                                    );
                                 @endphp
                                 <tr>
                                     <td class="px-4 py-3 text-sm text-gray-900">{{ $booking->customer->name }}</td>
@@ -84,6 +173,9 @@
                                     <td class="px-4 py-3 text-right">
                                         <div class="flex flex-wrap justify-end gap-2">
                                             <a href="{{ route('admin.bookings.show', $booking) }}" class="px-3 py-1.5 text-sm bg-stone-600 text-white rounded-lg hover:bg-stone-700">Detail</a>
+                                            @if($waRawPhone !== '')
+                                                <a href="https://wa.me/{{ $waRawPhone }}?text={{ $waMessage }}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700">WhatsApp</a>
+                                            @endif
                                             <a href="{{ route('admin.bookings.invoice.preview', $booking) }}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 text-sm bg-stone-700 text-white rounded-lg hover:bg-stone-800">Preview</a>
                                             <a href="{{ route('admin.bookings.invoice', $booking) }}" class="px-3 py-1.5 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600">Invoice</a>
                                             @if($booking->status !== \App\Models\Booking::STATUS_CANCELED)
@@ -136,6 +228,39 @@
                                 'canceled' => 'bg-red-100 text-red-700',
                                 default => 'bg-gray-100 text-gray-700',
                             };
+                            $waRawPhone = preg_replace('/\D+/', '', (string) ($booking->customer->phone ?? '')) ?? '';
+                            if (str_starts_with($waRawPhone, '0')) {
+                                $waRawPhone = '62'.substr($waRawPhone, 1);
+                            } elseif ($waRawPhone !== '' && !str_starts_with($waRawPhone, '62')) {
+                                $waRawPhone = '62'.$waRawPhone;
+                            }
+                            $tenantName = trim((string) ($booking->tenant?->name ?? 'MUA Kami'));
+                            $bookingLocation = trim((string) ($booking->location ?? ''));
+                            $studioMaps = trim((string) ($booking->tenant?->studio_maps_link ?? ''));
+                            $studioAddress = trim((string) ($booking->tenant?->studio_location ?? ''));
+                            $isStudioService = $bookingLocation !== '' && ($bookingLocation === $studioMaps || $bookingLocation === $studioAddress);
+                            if ($isStudioService) {
+                                $studioLocationForCustomer = $studioMaps !== '' ? $studioMaps : ($studioAddress !== '' ? $studioAddress : $bookingLocation);
+                                $waLocationSection =
+                                    "- Jenis Layanan: Studio {$tenantName}\n".
+                                    "- Lokasi Studio: {$studioLocationForCustomer}\n".
+                                    "- Konfirmasi: Lokasi Anda menggunakan layanan {$tenantName} di lokasi berikut (tautan map di atas).\n";
+                            } else {
+                                $homeLocationForCustomer = $bookingLocation !== '' ? $bookingLocation : '-';
+                                $waLocationSection =
+                                    "- Jenis Layanan: Home Service\n".
+                                    "- Lokasi Home Service: {$homeLocationForCustomer}\n".
+                                    "- Konfirmasi: Alamat/lokasi di atas adalah lokasi yang Anda tambahkan pada form booking.\n";
+                            }
+                            $waMessage = rawurlencode(
+                                "Halo {$booking->customer->name},\n".
+                                "Ini ringkasan booking Anda:\n".
+                                "- Layanan: {$booking->service->name}\n".
+                                "- Jadwal: ".($booking->booking_date?->format('d M Y') ?? '-')." ".substr((string) $booking->booking_time, 0, 5)." - ".substr((string) $booking->end_time, 0, 5)."\n".
+                                $waLocationSection.
+                                "- Status: {$statusLabel}\n\n".
+                                "Invoice dan detail lengkap akan kami kirimkan melalui chat ini. Silakan hubungi kami jika ada penyesuaian jadwal."
+                            );
                         @endphp
                         <div class="rounded-xl border border-rose-100 bg-rose-50/40 p-4 shadow-sm">
                             <p class="text-sm font-semibold text-stone-900">{{ $booking->customer->name }}</p>
@@ -165,6 +290,9 @@
                             </p>
                             <div class="mt-3 flex flex-wrap gap-2">
                                 <a href="{{ route('admin.bookings.show', $booking) }}" class="px-3 py-1.5 text-sm bg-stone-600 text-white rounded-lg hover:bg-stone-700">Detail</a>
+                                @if($waRawPhone !== '')
+                                    <a href="https://wa.me/{{ $waRawPhone }}?text={{ $waMessage }}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700">WhatsApp</a>
+                                @endif
                                 <a href="{{ route('admin.bookings.invoice.preview', $booking) }}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 text-sm bg-stone-700 text-white rounded-lg hover:bg-stone-800">Preview</a>
                                 <a href="{{ route('admin.bookings.invoice', $booking) }}" class="px-3 py-1.5 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600">Invoice</a>
                                 @if($booking->status !== \App\Models\Booking::STATUS_CANCELED)

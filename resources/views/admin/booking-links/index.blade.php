@@ -17,13 +17,22 @@
             <div class="bg-white rounded-2xl border border-rose-100 shadow p-6">
                 <h3 class="text-lg font-semibold text-stone-900">Buat Form Booking Publik</h3>
                 <p class="text-sm text-stone-600 mt-1">Tautan akan kedaluwarsa otomatis setelah 2 x 24 jam.</p>
+                @php
+                    $defaultTermsTitle = trim((string) ($tenant?->booking_terms_title ?? '')) ?: 'Syarat & Ketentuan Booking';
+                    $defaultTermsContent = trim((string) ($tenant?->booking_terms_content ?? ''));
+                    if ($defaultTermsContent === '') {
+                        $defaultTermsContent = "1. Booking dianggap valid setelah DP diterima.\n2. Jadwal dapat diubah maksimal H-2 sebelum hari layanan.\n3. DP yang sudah dibayar tidak dapat direfund jika booking dibatalkan customer.";
+                    }
+                @endphp
                 <form action="{{ route('admin.booking-links.store') }}" method="POST" class="mt-4 space-y-4">
                     @csrf
                     <div>
                         <label class="block text-sm font-medium text-stone-700">Layanan yang diizinkan</label>
                         <select name="service_ids[]" multiple size="5" class="mt-1 w-full rounded-xl border-stone-300 focus:border-rose-400 focus:ring-rose-300">
                             @foreach($services as $service)
-                                <option value="{{ $service->id }}">{{ $service->name }}</option>
+                                <option value="{{ $service->id }}" @selected(collect(old('service_ids', []))->contains($service->id))>
+                                    {{ $service->name }}
+                                </option>
                             @endforeach
                         </select>
                         @error('service_ids') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
@@ -34,6 +43,30 @@
                         <label class="block text-sm font-medium text-stone-700">Maksimal pengiriman (opsional)</label>
                         <input type="number" min="1" max="500" name="max_submissions" value="{{ old('max_submissions') }}" class="mt-1 w-full rounded-xl border-stone-300 focus:border-rose-400 focus:ring-rose-300">
                         @error('max_submissions') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700">Judul T&C</label>
+                        <input
+                            type="text"
+                            name="terms_title"
+                            value="{{ old('terms_title', $defaultTermsTitle) }}"
+                            required
+                            class="mt-1 w-full rounded-xl border-stone-300 focus:border-rose-400 focus:ring-rose-300"
+                        >
+                        @error('terms_title') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700">Isi T&C (wajib)</label>
+                        <textarea
+                            name="terms_content"
+                            rows="6"
+                            required
+                            class="mt-1 w-full rounded-xl border-stone-300 focus:border-rose-400 focus:ring-rose-300"
+                            placeholder="Contoh: DP tidak dapat dikembalikan jika ada pembatalan mendadak..."
+                        >{{ old('terms_content', $defaultTermsContent) }}</textarea>
+                        @error('terms_content') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
                     </div>
 
                     <button type="submit" class="px-6 py-2.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 transition">
@@ -56,6 +89,15 @@
                         </div>
                         <p class="mt-3 text-sm text-stone-600">Berakhir: {{ $form->expires_at->format('d M Y H:i') }}</p>
                         <p class="text-sm text-stone-600">Jumlah pengiriman: {{ $form->submission_count }}{{ $form->max_submissions ? ' / '.$form->max_submissions : '' }}</p>
+                        @php
+                            $terms = $form->settings['terms'] ?? [];
+                            $termsTitle = trim((string) ($terms['title'] ?? ''));
+                        @endphp
+                        @if($termsTitle !== '')
+                            <p class="text-sm text-stone-600">
+                                T&C: {{ $termsTitle }}
+                            </p>
+                        @endif
 
                         <div class="mt-4 flex flex-wrap gap-2">
                             <a href="{{ route('public.booking.show', $form->token) }}" target="_blank" class="px-4 py-2 rounded-xl bg-stone-800 text-white text-sm hover:bg-black">

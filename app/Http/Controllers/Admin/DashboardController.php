@@ -7,6 +7,7 @@ use App\Services\BookingService;
 use App\Services\CustomerService;
 use App\Services\PlanService;
 use App\Services\SubscriptionService;
+use Carbon\Carbon;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -27,6 +28,8 @@ class DashboardController extends Controller
         $servicesCount = $user?->services()->count() ?? 0;
         $planDetail = $this->planService->detail($plan);
         $bookingUsage = $this->subscriptionService->getBookingUsage((int) ($user?->id ?? 0));
+        $hasPlanActivationNotice = $user?->plan_activation_notice_until !== null
+            && Carbon::parse($user->plan_activation_notice_until)->isFuture();
 
         return view('admin.dashboard', [
             'totalBookings' => $this->bookingService->getTotalBookings(),
@@ -39,6 +42,8 @@ class DashboardController extends Controller
             'trialExpiry' => $user?->subscription?->expired_at,
             'bookingUsage' => $bookingUsage,
             'servicesCount' => $servicesCount,
+            'hasPlanActivationNotice' => $hasPlanActivationNotice,
+            'planActivationNoticePlan' => (string) ($user?->plan_activation_notice_plan ?? $plan),
         ]);
     }
 }

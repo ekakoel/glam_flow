@@ -44,6 +44,7 @@ Route::middleware(['auth', 'not_suspended', 'subscription'])->prefix('admin')->n
     Route::post('/bookings/{booking}/pay-now', [BookingController::class, 'payNow'])->name('bookings.pay-now');
     Route::post('/bookings/{booking}/reschedule', [BookingController::class, 'reschedule'])->name('bookings.reschedule');
     Route::patch('/bookings/{booking}/confirm', [BookingController::class, 'confirm'])->name('bookings.confirm');
+    Route::patch('/bookings/terms', [BookingController::class, 'updateTerms'])->name('bookings.terms.update');
     Route::get('/booking-links', [PublicBookingFormController::class, 'index'])->name('booking-links.index');
     Route::post('/booking-links', [PublicBookingFormController::class, 'store'])->name('booking-links.store');
     Route::patch('/booking-links/{publicBookingForm}/extend', [PublicBookingFormController::class, 'extend'])->name('booking-links.extend');
@@ -72,6 +73,8 @@ Route::middleware(['auth', 'not_suspended'])->group(function () {
     Route::post('/onboarding/customer', [OnboardingController::class, 'storeFirstCustomer'])->name('onboarding.customer');
     Route::post('/onboarding/booking', [OnboardingController::class, 'storeFirstBooking'])->name('onboarding.booking');
     Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+    Route::post('/billing/upgrade-request', [BillingController::class, 'requestUpgrade'])->name('billing.upgrade-request');
+    Route::patch('/billing/upgrade-request/{upgradeRequest}/confirm-payment', [BillingController::class, 'confirmUpgradePayment'])->name('billing.upgrade-request.confirm-payment');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -81,6 +84,7 @@ Route::middleware(['auth', 'not_suspended'])->group(function () {
 Route::middleware('throttle:12,1')->group(function () {
     Route::get('/book/{token}', [PublicBookingController::class, 'show'])->name('public.booking.show');
     Route::post('/book/{token}', [PublicBookingController::class, 'store'])->name('public.booking.store');
+    Route::get('/book/{token}/thank-you', [PublicBookingController::class, 'thankYou'])->name('public.booking.thank-you');
 });
 
 Route::middleware(['auth', 'not_suspended', 'super_admin'])
@@ -98,6 +102,8 @@ Route::middleware(['auth', 'not_suspended', 'super_admin'])
         Route::patch('/tenants/{tenant}/role', [TenantManagementController::class, 'updateRole'])->name('tenants.role.update');
         Route::patch('/tenants/{tenant}/suspend', [TenantManagementController::class, 'updateSuspend'])->name('tenants.suspend.update');
         Route::patch('/tenants/{tenant}/password-reset', [TenantManagementController::class, 'resetPassword'])->name('tenants.password-reset');
+        Route::patch('/tenants/{tenant}/upgrade-requests/{upgradeRequest}/approve', [TenantManagementController::class, 'approveUpgradeRequest'])->name('tenants.upgrade-requests.approve');
+        Route::patch('/tenants/{tenant}/upgrade-requests/{upgradeRequest}/reject', [TenantManagementController::class, 'rejectUpgradeRequest'])->name('tenants.upgrade-requests.reject');
         Route::get('/plans', [PlanManagementController::class, 'index'])->name('plans.index');
         Route::put('/plans/{planKey}', [PlanManagementController::class, 'update'])->name('plans.update');
         Route::delete('/plans/{planKey}', [PlanManagementController::class, 'reset'])->name('plans.reset');

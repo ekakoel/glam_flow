@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RescheduleBookingDateTimeRequest;
+use App\Http\Requests\UpdateBookingTermsRequest;
 use App\Models\Booking;
 use App\Http\Requests\StoreBookingRequest;
 use App\Services\BookingService;
 use App\Services\CustomerService;
 use App\Services\InvoiceService;
 use App\Services\Payments\PaymentService;
+use App\Services\PublicBookingFormService;
 use App\Services\ServiceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -24,15 +26,44 @@ class BookingController extends Controller
         private readonly BookingService $bookingService,
         private readonly CustomerService $customerService,
         private readonly ServiceService $serviceService,
-        private readonly PaymentService $paymentService
+        private readonly PaymentService $paymentService,
+        private readonly PublicBookingFormService $publicBookingFormService
     ) {
     }
 
     public function index(): View
     {
+        $tenant = auth()->user();
+
         return view('admin.bookings.index', [
             'bookings' => $this->bookingService->paginate(),
+            'tenant' => $tenant,
         ]);
+    }
+
+    public function updateTerms(UpdateBookingTermsRequest $request): RedirectResponse
+    {
+        $tenant = auth()->user();
+        if ($tenant === null) {
+            return redirect()
+                ->route('login');
+        }
+
+        $tenant->forceFill([
+            'booking_terms_title' => trim((string) $request->validated('booking_terms_title')),
+            'booking_terms_content' => trim((string) $request->validated('booking_terms_content')),
+            'booking_terms_updated_at' => now(),
+        ])->save();
+
+        $this->publicBookingFormService->syncTermsToActiveForms(
+            (int) $tenant->id,
+            (string) $tenant->booking_terms_title,
+            (string) $tenant->booking_terms_content
+        );
+
+        return redirect()
+            ->route('admin.bookings.index')
+            ->with('success', 'T&C booking berhasil disimpan.');
     }
 
     public function create(): View

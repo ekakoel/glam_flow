@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\PublicBookingForm;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
@@ -17,7 +18,13 @@ class PublicBookingFormService
             ->get();
     }
 
-    public function createForTenant(int $tenantId, array $serviceIds, ?int $maxSubmissions = null): PublicBookingForm
+    public function createForTenant(
+        int $tenantId,
+        array $serviceIds,
+        ?int $maxSubmissions = null,
+        string $termsTitle = 'Syarat & Ketentuan Booking',
+        string $termsContent = ''
+    ): PublicBookingForm
     {
         return PublicBookingForm::withoutGlobalScopes()->create([
             'tenant_id' => $tenantId,
@@ -26,6 +33,10 @@ class PublicBookingFormService
             'is_active' => true,
             'settings' => [
                 'service_ids' => array_values(array_unique($serviceIds)),
+                'terms' => [
+                    'title' => trim($termsTitle),
+                    'content' => trim($termsContent),
+                ],
             ],
             'max_submissions' => $maxSubmissions,
             'submission_count' => 0,
@@ -93,5 +104,52 @@ class PublicBookingFormService
     public function isExpired(PublicBookingForm $form): bool
     {
         return Carbon::parse($form->expires_at)->isPast();
+    }
+
+    public function resolveTerms(PublicBookingForm $form, ?User $tenant = null): array
+    {
+        $settings = is_array($form->settings) ? $form->settings : [];
+        $terms = is_array($settings['terms'] ?? null) ? $settings['terms'] : [];
+
+        $titleFromForm = trim((string) ($terms['title'] ?? ''));
+        $contentFromForm = trim((string) ($terms['content'] ?? ''));
+
+        $titleFromTenant = trim((string) ($tenant?->booking_terms_title ?? ''));
+        $contentFromTenant = trim((string) ($tenant?->booking_terms_content ?? ''));
+
+        $title = $titleFromForm !== '' ? $titleFromForm : ($titleFromTenant !== '' ? $titleFromTenant : 'Syarat & Ketentuan Booking');
+        $content = $contentFromForm !== '' ? $contentFromForm : $contentFromTenant;
+
+        if ($content === '') {
+            $content = 'Dengan melanjutkan, Anda menyetujui kebijakan booking dari MUA terkait DP, penjadwalan ulang, dan pembatalan.';
+        }
+
+        return [
+            'title' => $title,
+            'content' => $content,
+        ];
+    }
+
+    public function syncTermsToActiveForms(int $tenantId, string $title, string $content): int
+    {
+        $forms = PublicBookingForm::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->where('is_active', true)
+            ->get();
+
+        $updated = 0;
+        foreach ($forms as $form) {
+            $settings = is_array($form->settings) ? $form->settings : [];
+            $settings['terms'] = [
+                'title' => trim($title),
+                'content' => trim($content),
+            ];
+
+            $form->settings = $settings;
+            $form->save();
+            $updated++;
+        }
+
+        return $updated;
     }
 }
