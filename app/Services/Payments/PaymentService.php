@@ -323,6 +323,42 @@ class PaymentService
         return $updated;
     }
 
+    public function syncWithBookingPricing(Booking $booking): Payment
+    {
+        $booking->loadMissing(['service', 'bookingItems']);
+        $payment = $this->createForBooking($booking);
+        if ($booking->status === Booking::STATUS_CANCELED || $booking->hasServicePassed()) {
+            return $payment;
+        }
+
+        $subtotal = $this->calculateSubtotal($booking);
+        $discount = round(max(0, (float) $payment->discount_amount), 2);
+        if ($discount > $subtotal) {
+            $discount = $subtotal;
+        }
+
+        $amount = max(0, round($subtotal - $discount, 2));
+        $dpAmount = $this->calculateDpAmount($amount);
+        $paidAmount = min((float) $payment->paid_amount, $amount);
+
+        $isDpPaid = $paidAmount >= $dpAmount;
+        $isSettled = $paidAmount >= $amount;
+
+        $updated = $this->paymentRepository->update($payment, [
+            'amount' => $amount,
+            'discount_amount' => $discount,
+            'dp_amount' => $dpAmount,
+            'paid_amount' => $paidAmount,
+            'status' => $isSettled ? Payment::STATUS_PAID : Payment::STATUS_PENDING,
+            'dp_paid_at' => $isDpPaid ? ($payment->dp_paid_at ?? Carbon::now()) : null,
+            'paid_at' => $isSettled ? ($payment->paid_at ?? Carbon::now()) : null,
+        ]);
+
+        $this->billingLogService->logPayment($updated, 'payment_synced_from_booking');
+
+        return $updated;
+    }
+
     private function calculateDpAmount(float $totalAmount): float
     {
         $percent = (float) config('payment.dp_min_percent', 30);
@@ -334,10 +370,11 @@ class PaymentService
     private function calculateSubtotal(Booking $booking): float
     {
         $amountFromItems = (float) $booking->bookingItems->sum('subtotal');
+        $transportFee = round(max(0, (float) ($booking->transport_fee ?? 0)), 2);
         if ($amountFromItems > 0) {
-            return round($amountFromItems, 2);
+            return round($amountFromItems + $transportFee, 2);
         }
 
-        return round((float) $booking->service->price, 2);
+        return round((float) $booking->service->price + $transportFee, 2);
     }
 }

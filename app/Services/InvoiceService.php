@@ -59,8 +59,12 @@ class InvoiceService
             return null;
         }
 
-        $binary = File::get($absolutePath);
         $mimeType = File::mimeType($absolutePath) ?: 'image/png';
+        if (! extension_loaded('gd') && in_array($mimeType, ['image/png', 'image/webp', 'image/gif'], true)) {
+            return null;
+        }
+
+        $binary = File::get($absolutePath);
 
         return 'data:'.$mimeType.';base64,'.base64_encode($binary);
     }

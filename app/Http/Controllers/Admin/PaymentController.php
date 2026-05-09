@@ -80,14 +80,18 @@ class PaymentController extends Controller
             : null;
 
         try {
-            $this->paymentService->markDpAsPaid($model, Payment::METHOD_MANUAL, $manualDpAmount);
+            $updated = $this->paymentService->markDpAsPaid($model, Payment::METHOD_MANUAL, $manualDpAmount);
         } catch (InvalidArgumentException $exception) {
             return back()->withErrors([
                 'payment' => $exception->getMessage(),
             ]);
         }
 
-        return back()->with('success', 'DP berhasil diterima.');
+        $message = $updated->isSettled()
+            ? 'Pembayaran berhasil diterima dan booking sudah lunas.'
+            : 'Pembayaran DP berhasil diterima.';
+
+        return back()->with('success', $message);
     }
 
     public function markSettled(int $payment): RedirectResponse

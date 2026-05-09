@@ -39,6 +39,7 @@ class StoreBookingRequest extends FormRequest
             'booking_date' => ['required', 'date'],
             'booking_time' => ['required', 'date_format:H:i'],
             'location' => ['nullable', 'string', 'max:500', new GoogleMapsLinkOrText()],
+            'transport_fee' => ['nullable', 'numeric', 'min:0'],
             'status' => [
                 'required',
                 Rule::in([

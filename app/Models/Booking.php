@@ -35,6 +35,7 @@ class Booking extends Model
         'terms_acceptance_ip',
         'terms_acceptance_user_agent',
         'location',
+        'transport_fee',
         'status',
         'notes',
     ];
@@ -50,6 +51,7 @@ class Booking extends Model
         'google_event_id' => 'string',
         'tomorrow_reminder_sent_at' => 'datetime',
         'terms_accepted_at' => 'datetime',
+        'transport_fee' => 'decimal:2',
     ];
 
     public function service(): BelongsTo

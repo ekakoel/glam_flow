@@ -122,6 +122,21 @@
                         @error('location') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
                     </div>
 
+                    <div id="transport-fee-wrapper">
+                        <label class="block text-sm font-medium text-stone-700">Biaya Transportasi (Opsional)</label>
+                        <input
+                            id="transport_fee_input"
+                            type="number"
+                            name="transport_fee"
+                            min="0"
+                            step="1000"
+                            value="{{ old('transport_fee', (int) round((float) ($defaultTransportFee ?? 0))) }}"
+                            class="mt-1 w-full rounded-xl border-stone-300 focus:border-rose-400 focus:ring-rose-300"
+                        >
+                        <p class="mt-1 text-xs text-stone-500">Isi 0 jika tidak ada biaya tambahan.</p>
+                        @error('transport_fee') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+
                     @if($hasStudioOption)
                         <div id="studio-location-wrapper" class="hidden rounded-xl border border-rose-100 bg-rose-50/60 p-4">
                             <p class="text-sm font-medium text-stone-800">{{ $studioOptionLabel }}</p>
@@ -233,6 +248,9 @@
             const homeLokasiWrapper = document.getElementById('home-location-wrapper');
             const studioLokasiWrapper = document.getElementById('studio-location-wrapper');
             const locationInput = document.getElementById('location_input');
+            const transportFeeWrapper = document.getElementById('transport-fee-wrapper');
+            const transportFeeInput = document.getElementById('transport_fee_input');
+            const defaultTransportFee = String(@json((int) round((float) ($defaultTransportFee ?? 0))));
             if (!trigger || !modal) {
                 // continue for location switcher even if modal fails
             }
@@ -262,13 +280,23 @@
                 if (mode === 'studio') {
                     homeLokasiWrapper?.classList.add('hidden');
                     studioLokasiWrapper?.classList.remove('hidden');
+                    transportFeeWrapper?.classList.add('hidden');
                     locationInput?.removeAttribute('required');
                     locationInput?.setAttribute('disabled', 'disabled');
+                    transportFeeInput?.setAttribute('disabled', 'disabled');
+                    if (transportFeeInput) {
+                        transportFeeInput.value = '0';
+                    }
                 } else {
                     homeLokasiWrapper?.classList.remove('hidden');
                     studioLokasiWrapper?.classList.add('hidden');
+                    transportFeeWrapper?.classList.remove('hidden');
                     locationInput?.setAttribute('required', 'required');
                     locationInput?.removeAttribute('disabled');
+                    transportFeeInput?.removeAttribute('disabled');
+                    if (transportFeeInput && (transportFeeInput.value === '' || transportFeeInput.value === '0')) {
+                        transportFeeInput.value = defaultTransportFee;
+                    }
                 }
             };
 
@@ -278,4 +306,3 @@
     </script>
 </body>
 </html>
-

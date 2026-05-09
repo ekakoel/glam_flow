@@ -28,21 +28,49 @@
                     @csrf
                     <div>
                         <label class="block text-sm font-medium text-stone-700">Layanan yang diizinkan</label>
-                        <select name="service_ids[]" multiple size="5" class="mt-1 w-full rounded-xl border-stone-300 focus:border-rose-400 focus:ring-rose-300">
-                            @foreach($services as $service)
-                                <option value="{{ $service->id }}" @selected(collect(old('service_ids', []))->contains($service->id))>
-                                    {{ $service->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        @php
+                            $selectedServiceIds = collect(old('service_ids', []))->map(fn ($id) => (int) $id)->all();
+                        @endphp
+                        <div class="mt-2 max-h-60 overflow-y-auto rounded-xl border border-stone-300 bg-white p-3 space-y-2">
+                            @forelse($services as $service)
+                                <label class="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-rose-50">
+                                    <input
+                                        type="checkbox"
+                                        name="service_ids[]"
+                                        value="{{ $service->id }}"
+                                        class="rounded border-stone-300 text-rose-600 focus:ring-rose-400"
+                                        @checked(in_array((int) $service->id, $selectedServiceIds, true))
+                                    >
+                                    <span class="text-sm text-stone-700">{{ $service->name }}</span>
+                                </label>
+                            @empty
+                                <p class="text-sm text-stone-500">Belum ada layanan. Tambahkan layanan dulu.</p>
+                            @endforelse
+                        </div>
                         @error('service_ids') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
                         @error('service_ids.*') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-stone-700">Maksimal pengiriman (opsional)</label>
-                        <input type="number" min="1" max="500" name="max_submissions" value="{{ old('max_submissions') }}" class="mt-1 w-full rounded-xl border-stone-300 focus:border-rose-400 focus:ring-rose-300">
-                        @error('max_submissions') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700">Maksimal pengiriman (opsional)</label>
+                            <input type="number" min="1" max="500" name="max_submissions" value="{{ old('max_submissions') }}" class="mt-1 w-full rounded-xl border-stone-300 focus:border-rose-400 focus:ring-rose-300">
+                            @error('max_submissions') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-stone-700">Biaya Transport Default Link</label>
+                            <input
+                                type="number"
+                                min="0"
+                                step="1000"
+                                name="transport_fee"
+                                value="{{ old('transport_fee', 0) }}"
+                                class="mt-1 w-full rounded-xl border-stone-300 focus:border-rose-400 focus:ring-rose-300"
+                            >
+                            <p class="mt-1 text-xs text-stone-500">Dipakai sebagai default pada Form Booking Publik saat Home Service.</p>
+                            @error('transport_fee') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+                        </div>
                     </div>
 
                     <div>
@@ -92,12 +120,16 @@
                         @php
                             $terms = $form->settings['terms'] ?? [];
                             $termsTitle = trim((string) ($terms['title'] ?? ''));
+                            $transportFee = max(0, (float) ($form->settings['transport_fee'] ?? 0));
                         @endphp
                         @if($termsTitle !== '')
                             <p class="text-sm text-stone-600">
                                 T&C: {{ $termsTitle }}
                             </p>
                         @endif
+                        <p class="text-sm text-stone-600">
+                            Default transport link: Rp {{ number_format($transportFee, 0, ',', '.') }}
+                        </p>
 
                         <div class="mt-4 flex flex-wrap gap-2">
                             <a href="{{ route('public.booking.show', $form->token) }}" target="_blank" class="px-4 py-2 rounded-xl bg-stone-800 text-white text-sm hover:bg-black">

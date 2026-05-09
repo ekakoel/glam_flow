@@ -12,9 +12,14 @@
     <body class="bg-stone-100 font-sans text-stone-900 antialiased">
         <header class="sticky top-0 z-40 border-b border-stone-200 bg-white/95 backdrop-blur">
             <div class="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-                <div>
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-rose-100 bg-white">
+                        <x-application-logo class="h-7 w-7 object-contain" />
+                    </span>
+                    <div>
                     <p class="text-xs font-semibold uppercase tracking-wider text-rose-600">Backend</p>
                     <h1 class="text-base font-semibold text-stone-900 sm:text-lg">Super Admin Panel</h1>
+                    </div>
                 </div>
                 <nav class="flex items-center gap-2 text-sm">
                     <a href="{{ route('backend.dashboard') }}" class="rounded-lg px-3 py-2 font-medium {{ request()->routeIs('backend.dashboard') ? 'bg-stone-900 text-white' : 'bg-white text-stone-700 hover:bg-stone-100' }}">Dashboard</a>

@@ -62,14 +62,15 @@
                             @error('location') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
+                            <label class="block text-sm font-medium text-gray-700">Biaya Transportasi (Opsional)</label>
+                            <input type="number" name="transport_fee" min="0" step="1000" value="{{ old('transport_fee', 0) }}" class="mt-1 w-full rounded-md border-gray-300">
+                            <p class="mt-1 text-xs text-gray-500">Isi `0` jika layanan di studio.</p>
+                            @error('transport_fee') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
                             <label class="block text-sm font-medium text-gray-700">Status</label>
-                            <select name="status" class="mt-1 w-full rounded-md border-gray-300">
-                                @foreach (['pending', 'confirmed', 'completed', 'canceled'] as $status)
-                                    <option value="{{ $status }}" @selected(old('status', 'pending') === $status)>
-                                        {{ ucfirst($status) }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <input type="hidden" name="status" value="pending">
+                            <input type="text" value="Pending (otomatis saat booking baru)" readonly class="mt-1 w-full rounded-md border-gray-200 bg-gray-50 text-gray-700">
                             @error('status') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
                     </div>

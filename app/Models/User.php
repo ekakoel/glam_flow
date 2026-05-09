@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -33,6 +34,7 @@ class User extends Authenticatable
         'studio_name',
         'studio_location',
         'studio_maps_link',
+        'default_transport_fee',
         'logo_path',
         'payment_bank_name',
         'payment_account_name',
@@ -71,6 +73,7 @@ class User extends Authenticatable
             'is_suspended' => 'boolean',
             'suspended_at' => 'datetime',
             'notify_tomorrow_booking' => 'boolean',
+            'default_transport_fee' => 'decimal:2',
             'booking_terms_updated_at' => 'datetime',
             'plan_activation_notice_until' => 'datetime',
             'onboarding_completed_at' => 'datetime',
@@ -159,11 +162,16 @@ class User extends Authenticatable
 
     public function logoUrl(): ?string
     {
-        if (! $this->logo_path) {
+        $path = trim((string) $this->logo_path);
+        if ($path === '') {
             return null;
         }
 
-        return Storage::disk('public')->url($this->logo_path);
+        if (! Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        return '/storage/'.ltrim(Str::replaceFirst('public/', '', $path), '/');
     }
 
     public function primaryPaymentAccount(): ?TenantPaymentAccount

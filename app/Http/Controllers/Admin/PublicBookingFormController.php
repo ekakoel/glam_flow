@@ -36,6 +36,7 @@ class PublicBookingFormController extends Controller
             $tenantId,
             $request->validated('service_ids'),
             $request->validated('max_submissions'),
+            $request->validated('transport_fee'),
             $request->validated('terms_title'),
             $request->validated('terms_content')
         );

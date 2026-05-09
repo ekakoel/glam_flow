@@ -40,6 +40,7 @@ class PublicBookingController extends Controller
 
         $tenant = User::query()->find($form->tenant_id);
         $effectiveTerms = $this->publicBookingFormService->resolveTerms($form, $tenant);
+        $defaultTransportFee = $this->publicBookingFormService->resolveTransportFee($form, $tenant);
 
         return view('public-booking.form', [
             'form' => $form,
@@ -47,6 +48,7 @@ class PublicBookingController extends Controller
             'token' => $token,
             'tenant' => $tenant,
             'effectiveTerms' => $effectiveTerms,
+            'defaultTransportFee' => $defaultTransportFee,
         ]);
     }
 

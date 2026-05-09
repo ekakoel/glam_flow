@@ -58,6 +58,9 @@
                             <p class="mt-1 font-semibold text-stone-800">{{ $booking->service->name }}</p>
                             <p class="text-stone-600">Rp {{ number_format((float) $booking->service->price, 0, ',', '.') }}</p>
                         @endif
+                        <p class="mt-2 text-stone-600">
+                            Biaya transport: Rp {{ number_format((float) ($booking->transport_fee ?? 0), 0, ',', '.') }}
+                        </p>
                         <p class="mt-2 text-stone-600">Total orang: {{ $booking->total_people ?? 1 }}</p>
                     </div>
                     <div class="p-4 rounded-xl bg-stone-50 border border-stone-200">
@@ -77,6 +80,11 @@
                         <p class="text-stone-500">Pembayaran</p>
                         @php
                             $payment = $booking->payment;
+                            $serviceSubtotal = (float) $booking->bookingItems->sum('subtotal');
+                            if ($serviceSubtotal <= 0) {
+                                $serviceSubtotal = (float) ($booking->service->price ?? 0);
+                            }
+                            $transportFee = max(0, (float) ($booking->transport_fee ?? 0));
                             $total = (float) ($payment?->amount ?? 0);
                             $dp = (float) ($payment?->dp_amount ?? 0);
                             $paid = (float) ($payment?->paid_amount ?? 0);
@@ -86,6 +94,8 @@
                                 : (($payment?->isDpPaid() ?? false) ? 'DP Lunas, Menunggu Pelunasan' : 'Menunggu DP');
                         @endphp
                         <p class="mt-1 font-semibold text-stone-800">{{ $paymentLabel }}</p>
+                        <p class="text-stone-600">Biaya layanan: Rp {{ number_format($serviceSubtotal, 0, ',', '.') }}</p>
+                        <p class="text-stone-600">Biaya transport: Rp {{ number_format($transportFee, 0, ',', '.') }}</p>
                         <p class="text-stone-600">Total: Rp {{ number_format($total, 0, ',', '.') }}</p>
                         <p class="text-stone-600">DP Min.: Rp {{ number_format($dp, 0, ',', '.') }}</p>
                         <p class="text-stone-600">Terbayar: Rp {{ number_format($paid, 0, ',', '.') }}</p>
@@ -143,6 +153,8 @@
                         "- Jumlah orang: ".((int) ($booking->total_people ?? 1))."\n".
                         $waLocationSection."\n".
                         "Ringkasan pembayaran:\n".
+                        "- Biaya Layanan: Rp ".number_format((float) $serviceSubtotal, 0, ',', '.')."\n".
+                        "- Biaya Transport: Rp ".number_format((float) $transportFee, 0, ',', '.')."\n".
                         "- Total: Rp ".number_format((float) ($payment?->amount ?? 0), 0, ',', '.')."\n".
                         "- Terbayar: Rp ".number_format((float) ($payment?->paid_amount ?? 0), 0, ',', '.')."\n".
                         "- Sisa: Rp ".number_format(max(0, (float) (($payment?->amount ?? 0) - ($payment?->paid_amount ?? 0))), 0, ',', '.')."\n\n".

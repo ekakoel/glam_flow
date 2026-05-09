@@ -58,11 +58,15 @@ class PublicBookingSubmissionService
         $bookingDate = (string) $data['booking_date'];
         $serviceLocation = (string) ($data['service_location'] ?? 'home_service');
         $resolvedLocation = $this->resolveLocationByType($serviceLocation, $data, $tenant);
+        $defaultTransportFee = $this->publicBookingFormService->resolveTransportFee($form, $tenant);
+        $transportFee = $serviceLocation === 'studio'
+            ? 0.0
+            : round(max(0, (float) ($data['transport_fee'] ?? $defaultTransportFee)), 2);
 
         $this->assertFutureDateTime($bookingDate, $bookingTime);
         $this->assertAvailability($tenantId, $bookingDate, $bookingTime, $endTime);
 
-        $booking = DB::transaction(function () use ($tenantId, $data, $service, $peopleCount, $bookingTime, $endTime, $bookingDate, $resolvedLocation, $terms) {
+        $booking = DB::transaction(function () use ($tenantId, $data, $service, $peopleCount, $bookingTime, $endTime, $bookingDate, $resolvedLocation, $terms, $transportFee) {
             $customer = $this->findOrCreateCustomer($tenantId, $data);
 
             $booking = Booking::withoutGlobalScopes()->create([
@@ -74,6 +78,7 @@ class PublicBookingSubmissionService
                 'booking_time' => $bookingTime,
                 'end_time' => $endTime,
                 'location' => $resolvedLocation,
+                'transport_fee' => $transportFee,
                 'status' => Booking::STATUS_PENDING,
                 'notes' => $data['notes'] ?? null,
                 'terms_accepted_at' => $data['terms_accepted_at'] ?? now(),

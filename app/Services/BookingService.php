@@ -60,6 +60,7 @@ class BookingService
         $data['tenant_id'] = $tenantId;
         $data['service_id'] = $primaryServiceId;
         $data['total_people'] = $totalPeople;
+        $data['transport_fee'] = round(max(0, (float) ($data['transport_fee'] ?? 0)), 2);
         $data['booking_time'] = $startTime;
         $data['end_time'] = $endTime;
         $data['tomorrow_reminder_sent_at'] = null;
@@ -123,6 +124,9 @@ class BookingService
 
         $data['service_id'] = $serviceId;
         $data['total_people'] = $totalPeople;
+        if (array_key_exists('transport_fee', $data)) {
+            $data['transport_fee'] = round(max(0, (float) ($data['transport_fee'] ?? 0)), 2);
+        }
         $data['booking_time'] = $startTime;
         $data['end_time'] = $endTime;
         if (
@@ -140,6 +144,7 @@ class BookingService
 
             return $updatedBooking;
         });
+        $this->paymentService->syncWithBookingPricing($updatedBooking->load('service', 'bookingItems', 'payment'));
         $this->syncWithCalendar($updatedBooking);
 
         return $updatedBooking;

@@ -22,10 +22,13 @@ class PublicBookingFormService
         int $tenantId,
         array $serviceIds,
         ?int $maxSubmissions = null,
+        ?float $transportFee = null,
         string $termsTitle = 'Syarat & Ketentuan Booking',
         string $termsContent = ''
     ): PublicBookingForm
     {
+        $normalizedTransportFee = round(max(0, (float) ($transportFee ?? 0)), 2);
+
         return PublicBookingForm::withoutGlobalScopes()->create([
             'tenant_id' => $tenantId,
             'token' => Str::random(48),
@@ -33,6 +36,7 @@ class PublicBookingFormService
             'is_active' => true,
             'settings' => [
                 'service_ids' => array_values(array_unique($serviceIds)),
+                'transport_fee' => $normalizedTransportFee,
                 'terms' => [
                     'title' => trim($termsTitle),
                     'content' => trim($termsContent),
@@ -151,5 +155,16 @@ class PublicBookingFormService
         }
 
         return $updated;
+    }
+
+    public function resolveTransportFee(PublicBookingForm $form, ?User $tenant = null): float
+    {
+        $settings = is_array($form->settings) ? $form->settings : [];
+        $fromForm = $settings['transport_fee'] ?? null;
+        if (is_numeric($fromForm)) {
+            return round(max(0, (float) $fromForm), 2);
+        }
+
+        return 0.0;
     }
 }

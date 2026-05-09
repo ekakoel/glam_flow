@@ -25,6 +25,7 @@ class SubmitPublicBookingRequest extends FormRequest
             'booking_date' => ['required', 'date'],
             'booking_time' => ['required', 'date_format:H:i'],
             'location' => ['nullable', 'required_if:service_location,home_service', 'string', 'max:500', new GoogleMapsLinkOrText()],
+            'transport_fee' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string'],
             'terms_accepted' => ['required', 'accepted'],
         ];

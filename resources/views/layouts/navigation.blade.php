@@ -2,13 +2,17 @@
     $navUser = auth()->user();
     $tomorrowDate = now()->addDay()->toDateString();
     $notificationsEnabled = (bool) ($navUser?->notify_tomorrow_booking ?? true);
-    $tomorrowBookingCount = ($navUser && $notificationsEnabled)
-        ? \App\Models\Booking::withoutGlobalScopes()
-            ->where('tenant_id', $navUser->id)
-            ->whereDate('booking_date', $tomorrowDate)
-            ->whereIn('status', [\App\Models\Booking::STATUS_PENDING, \App\Models\Booking::STATUS_CONFIRMED])
-            ->count()
-        : 0;
+    $tomorrowBookingCount = 0;
+    if ($navUser && $notificationsEnabled) {
+        $countCacheKey = 'nav:tomorrow-bookings:'.$navUser->id.':'.$tomorrowDate;
+        $tomorrowBookingCount = \Illuminate\Support\Facades\Cache::remember($countCacheKey, now()->addSeconds(30), function () use ($navUser, $tomorrowDate) {
+            return \App\Models\Booking::withoutGlobalScopes()
+                ->where('tenant_id', $navUser->id)
+                ->whereDate('booking_date', $tomorrowDate)
+                ->whereIn('status', [\App\Models\Booking::STATUS_PENDING, \App\Models\Booking::STATUS_CONFIRMED])
+                ->count();
+        });
+    }
     $planKey = getUserPlan($navUser);
     $planName = strtoupper((string) (config("plans.plans.$planKey.name") ?? $planKey));
     $planBadgeClass = match ($planKey) {
@@ -21,7 +25,13 @@
         'pro' => 'text-rose-400',
         default => 'text-stone-400',
     };
-    $usage = $navUser ? app(\App\Services\SubscriptionService::class)->getBookingUsage((int) $navUser->id) : null;
+    $usage = null;
+    if ($navUser) {
+        $usageCacheKey = 'nav:booking-usage:'.$navUser->id;
+        $usage = \Illuminate\Support\Facades\Cache::remember($usageCacheKey, now()->addSeconds(30), function () use ($navUser) {
+            return app(\App\Services\SubscriptionService::class)->getBookingUsage((int) $navUser->id);
+        });
+    }
     $usageLabel = $usage
         ? ($usage['is_unlimited']
             ? 'Kuota: Tanpa batas'

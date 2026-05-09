@@ -39,7 +39,8 @@
         $payment = $booking->payment;
 
         $rawSubtotal = (float) $items->sum('subtotal');
-        $subtotal = $rawSubtotal > 0 ? $rawSubtotal : (float) ($booking->service->price ?? 0);
+        $transportFee = max(0, (float) ($booking->transport_fee ?? 0));
+        $subtotal = $rawSubtotal > 0 ? ($rawSubtotal + $transportFee) : ((float) ($booking->service->price ?? 0) + $transportFee);
         $discount = max(0, (float) ($payment?->discount_amount ?? 0));
         if ($discount > $subtotal) {
             $discount = $subtotal;
@@ -148,6 +149,14 @@
                         <td>{{ $booking->total_people ?? 1 }} org</td>
                         <td class="amount">Rp {{ number_format((float) $booking->service->price, 0, ',', '.') }}</td>
                         <td class="amount">Rp {{ number_format((float) $booking->service->price, 0, ',', '.') }}</td>
+                    </tr>
+                @endif
+                @if($transportFee > 0)
+                    <tr>
+                        <td>Biaya Transportasi</td>
+                        <td>1</td>
+                        <td class="amount">Rp {{ number_format($transportFee, 0, ',', '.') }}</td>
+                        <td class="amount">Rp {{ number_format($transportFee, 0, ',', '.') }}</td>
                     </tr>
                 @endif
             </tbody>

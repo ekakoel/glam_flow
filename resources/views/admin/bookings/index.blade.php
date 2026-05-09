@@ -85,6 +85,7 @@
                             <tr>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pelanggan</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Layanan</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ringkasan Biaya</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipe Layanan</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Waktu</th>
@@ -134,12 +135,21 @@
                                             "- Lokasi Home Service: {$homeLocationForCustomer}\n".
                                             "- Konfirmasi: Alamat/lokasi di atas adalah lokasi yang Anda tambahkan pada form booking.\n";
                                     }
+                                    $serviceSubtotal = (float) $booking->bookingItems->sum('subtotal');
+                                    if ($serviceSubtotal <= 0) {
+                                        $serviceSubtotal = (float) ($booking->service->price ?? 0);
+                                    }
+                                    $transportFee = max(0, (float) ($booking->transport_fee ?? 0));
+                                    $estimatedTotal = $serviceSubtotal + $transportFee;
                                     $waMessage = rawurlencode(
                                         "Halo {$booking->customer->name},\n".
                                         "Ini ringkasan booking Anda:\n".
                                         "- Layanan: {$booking->service->name}\n".
                                         "- Jadwal: ".($booking->booking_date?->format('d M Y') ?? '-')." ".substr((string) $booking->booking_time, 0, 5)." - ".substr((string) $booking->end_time, 0, 5)."\n".
                                         $waLocationSection.
+                                        "- Biaya Layanan: Rp ".number_format($serviceSubtotal, 0, ',', '.')."\n".
+                                        "- Biaya Transport: Rp ".number_format($transportFee, 0, ',', '.')."\n".
+                                        "- Estimasi Total: Rp ".number_format($estimatedTotal, 0, ',', '.')."\n".
                                         "- Status: {$statusLabel}\n\n".
                                         "Invoice dan detail lengkap akan kami kirimkan melalui chat ini. Silakan hubungi kami jika ada penyesuaian jadwal."
                                     );
@@ -147,6 +157,11 @@
                                 <tr>
                                     <td class="px-4 py-3 text-sm text-gray-900">{{ $booking->customer->name }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-900">{{ $booking->service->name }}</td>
+                                    <td class="px-4 py-3 text-sm text-gray-900">
+                                        <p>Layanan: Rp {{ number_format($serviceSubtotal, 0, ',', '.') }}</p>
+                                        <p>Transport: Rp {{ number_format($transportFee, 0, ',', '.') }}</p>
+                                        <p class="font-semibold text-stone-800">Total: Rp {{ number_format($estimatedTotal, 0, ',', '.') }}</p>
+                                    </td>
                                     <td class="px-4 py-3 text-sm">
                                         @php
                                             $location = trim((string) ($booking->location ?? ''));
@@ -205,7 +220,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-4 py-8 text-center text-sm text-gray-500">Belum ada booking.</td>
+                                    <td colspan="9" class="px-4 py-8 text-center text-sm text-gray-500">Belum ada booking.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -252,12 +267,21 @@
                                     "- Lokasi Home Service: {$homeLocationForCustomer}\n".
                                     "- Konfirmasi: Alamat/lokasi di atas adalah lokasi yang Anda tambahkan pada form booking.\n";
                             }
+                            $serviceSubtotal = (float) $booking->bookingItems->sum('subtotal');
+                            if ($serviceSubtotal <= 0) {
+                                $serviceSubtotal = (float) ($booking->service->price ?? 0);
+                            }
+                            $transportFee = max(0, (float) ($booking->transport_fee ?? 0));
+                            $estimatedTotal = $serviceSubtotal + $transportFee;
                             $waMessage = rawurlencode(
                                 "Halo {$booking->customer->name},\n".
                                 "Ini ringkasan booking Anda:\n".
                                 "- Layanan: {$booking->service->name}\n".
                                 "- Jadwal: ".($booking->booking_date?->format('d M Y') ?? '-')." ".substr((string) $booking->booking_time, 0, 5)." - ".substr((string) $booking->end_time, 0, 5)."\n".
                                 $waLocationSection.
+                                "- Biaya Layanan: Rp ".number_format($serviceSubtotal, 0, ',', '.')."\n".
+                                "- Biaya Transport: Rp ".number_format($transportFee, 0, ',', '.')."\n".
+                                "- Estimasi Total: Rp ".number_format($estimatedTotal, 0, ',', '.')."\n".
                                 "- Status: {$statusLabel}\n\n".
                                 "Invoice dan detail lengkap akan kami kirimkan melalui chat ini. Silakan hubungi kami jika ada penyesuaian jadwal."
                             );
@@ -282,6 +306,12 @@
                             </p>
                             <p class="text-sm text-stone-600 mt-1">
                                 {{ $booking->booking_date?->format('d M Y') }} | {{ substr((string) $booking->booking_time, 0, 5) }} - {{ substr((string) $booking->end_time, 0, 5) }}
+                            </p>
+                            <p class="text-sm text-stone-600 mt-1">
+                                Biaya layanan Rp {{ number_format($serviceSubtotal, 0, ',', '.') }} | Transport Rp {{ number_format($transportFee, 0, ',', '.') }}
+                            </p>
+                            <p class="text-sm font-semibold text-stone-800">
+                                Estimasi total Rp {{ number_format($estimatedTotal, 0, ',', '.') }}
                             </p>
                             <p class="text-sm mt-2">
                                 <span class="px-2 py-1 rounded-full text-xs font-medium {{ $statusClass }}">
