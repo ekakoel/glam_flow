@@ -36,6 +36,16 @@
                                 @if ($tenant->is_suspended)
                                     <span class="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700">SUSPENDED</span>
                                 @endif
+                                @if($currentPlan === 'free')
+                                    <span class="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-semibold text-gray-700">FREE</span>
+                                @elseif($currentPlan === 'pro')
+                                    <span class="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">PRO</span>
+                                @elseif($currentPlan === 'premium')
+                                    <span class="rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[11px] font-semibold text-purple-700">PREMIUM</span>
+                                @endif
+                                @if($tenant->subscriptionUpgradeRequests->where('status', 'pending')->count() > 0)
+                                    <span class="rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[11px] font-semibold text-orange-700">Request Upgrade</span>
+                                @endif
                             </div>
                             <p class="text-sm text-stone-600">{{ $tenant->email }}</p>
                             <div class="mt-2 flex flex-wrap gap-2 text-xs text-stone-700">

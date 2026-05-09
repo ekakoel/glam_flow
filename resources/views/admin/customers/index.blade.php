@@ -2,9 +2,14 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Pelanggan</h2>
-            <a href="{{ route('admin.customers.create') }}" class="px-4 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700">
-                Tambah
-            </a>
+            <div class="flex items-center gap-2">
+                @if(auth()->user()->subscriptionUpgradeRequests->where('status', 'pending')->count() > 0)
+                    <span class="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-sm font-semibold text-orange-700">Request Upgrade ke Layanan</span>
+                @endif
+                <a href="{{ route('admin.customers.create') }}" class="px-4 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700">
+                    Tambah
+                </a>
+            </div>
         </div>
     </x-slot>
 

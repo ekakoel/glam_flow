@@ -41,6 +41,7 @@ class TenantManagementController extends Controller
                 });
             })
             ->with('subscription')
+            ->with('subscriptionUpgradeRequests')
             ->withCount(['services', 'customers', 'bookings'])
             ->latest()
             ->paginate(20)
