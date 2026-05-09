@@ -5,7 +5,7 @@
                 <h2 class="text-xl font-semibold leading-tight text-stone-900">Layanan</h2>
                 <p class="mt-1 text-sm text-stone-600">Kelola layanan dengan prioritas tampilan mobile.</p>
             </div>
-            <a href="{{ route('admin.services.create') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700">
+            <a href="{{ route('admin.services.create') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 min-h-[44px]">
                 + Tambah Layanan
             </a>
         </div>
@@ -46,7 +46,7 @@
                             </div>
                             <p class="mt-2 text-sm text-stone-600">{{ $service->description ?: '-' }}</p>
                             <div class="mt-4 grid grid-cols-2 gap-2">
-                                <a href="{{ route('admin.services.edit', $service) }}" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-600">
+                                <a href="{{ route('admin.services.edit', $service) }}" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-600 transition min-h-[44px]">
                                     Ubah
                                 </a>
                                 <form method="POST" action="{{ route('admin.services.destroy', $service) }}">
@@ -54,7 +54,7 @@
                                     @method('DELETE')
                                     <button
                                         type="submit"
-                                        class="inline-flex min-h-11 w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold text-white {{ $deletable ? 'bg-rose-600 hover:bg-rose-700' : 'cursor-not-allowed bg-stone-300' }}"
+                                        class="inline-flex min-h-11 w-full items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold text-white transition min-h-[44px] {{ $deletable ? 'bg-rose-600 hover:bg-rose-700' : 'cursor-not-allowed bg-stone-300' }}"
                                         @disabled(! $deletable)
                                         onclick="return confirm('Hapus layanan ini?')"
                                     >
@@ -67,8 +67,17 @@
                             @endif
                         </article>
                     @empty
-                        <div class="rounded-xl border border-dashed border-stone-300 bg-stone-50 p-4 text-sm text-stone-500">
-                            Belum ada layanan. Tambahkan layanan pertama Anda.
+                        <div class="rounded-2xl border border-dashed border-rose-200 bg-rose-50/80 p-8 text-center">
+                            <div class="inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-rose-100 bg-white mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4" />
+                                </svg>
+                            </div>
+                            <p class="font-semibold text-stone-900">Tambahkan layanan pertama Anda</p>
+                            <p class="mt-2 text-sm text-stone-600">Mulai dengan menambahkan layanan makeup untuk menerima booking dari klien Anda.</p>
+                            <a href="{{ route('admin.services.create') }}" class="mt-4 inline-flex rounded-2xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700 min-h-[44px] items-center">
+                                Buat Layanan Pertama
+                            </a>
                         </div>
                     @endforelse
                 </div>
@@ -121,7 +130,22 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-4 py-8 text-center text-sm text-stone-500">Belum ada layanan.</td>
+                                    <td colspan="5" class="px-4 py-12 text-center">
+                                        <div class="inline-flex flex-col items-center gap-4 rounded-2xl border border-dashed border-rose-200 bg-rose-50/80 px-8 py-8 max-w-sm">
+                                            <div class="inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-rose-100 bg-white">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4" />
+                                                </svg>
+                                            </div>
+                                            <div class="text-center space-y-2">
+                                                <p class="text-base font-semibold text-stone-900">Tambahkan layanan pertama Anda</p>
+                                                <p class="text-sm leading-6 text-stone-600">Mulai dengan menambahkan layanan makeup untuk menerima booking dan mengelola harga layanan Anda.</p>
+                                            </div>
+                                            <a href="{{ route('admin.services.create') }}" class="w-full rounded-2xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700">
+                                                Buat Layanan Pertama
+                                            </a>
+                                        </div>
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>

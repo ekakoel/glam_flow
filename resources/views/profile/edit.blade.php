@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-2xl text-stone-800 leading-tight">Profil Tenant</h2>
+        <h2 class="font-semibold text-xl text-stone-800 leading-tight">Profil Tenant</h2>
     </x-slot>
 
     <div class="py-8 bg-gradient-to-b from-rose-50 via-amber-50 to-white min-h-screen">

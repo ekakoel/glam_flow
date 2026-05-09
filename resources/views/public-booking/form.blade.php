@@ -184,7 +184,7 @@
                         @error('terms_accepted') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
                     </div>
 
-                    <button type="submit" class="w-full py-3 rounded-xl bg-rose-500 text-white font-semibold hover:bg-rose-600 transition">
+                    <button type="submit" class="w-full py-3 rounded-xl bg-rose-500 text-white font-semibold hover:bg-rose-600 transition min-h-[44px]">
                         Kirim Booking
                     </button>
                 </form>

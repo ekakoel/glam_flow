@@ -1,12 +1,12 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Pelanggan</h2>
             <div class="flex items-center gap-2">
                 @if(auth()->user()->subscriptionUpgradeRequests->where('status', 'pending')->count() > 0)
                     <span class="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-sm font-semibold text-orange-700">Request Upgrade ke Layanan</span>
                 @endif
-                <a href="{{ route('admin.customers.create') }}" class="px-4 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700">
+                <a href="{{ route('admin.customers.create') }}" class="px-4 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700 transition min-h-[44px] flex items-center">
                     Tambah
                 </a>
             </div>
@@ -53,7 +53,22 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">Belum ada pelanggan.</td>
+                                    <td colspan="5" class="px-4 py-12 text-center">
+                                        <div class="inline-flex flex-col items-center gap-4 rounded-2xl border border-dashed border-rose-200 bg-rose-50/80 px-8 py-8 max-w-sm">
+                                            <div class="inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-rose-100 bg-white">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM6 20a7 7 0 1114 0" />
+                                                </svg>
+                                            </div>
+                                            <div class="text-center space-y-2">
+                                                <p class="text-base font-semibold text-stone-900">Mulai bangun daftar klien Anda</p>
+                                                <p class="text-sm leading-6 text-stone-600">Tambahkan pelanggan pertama Anda untuk mulai mengelola booking dan riwayat layanan mereka dengan lebih mudah.</p>
+                                            </div>
+                                            <a href="{{ route('admin.customers.create') }}" class="w-full rounded-2xl bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-600">
+                                                Tambah Pelanggan Pertama
+                                            </a>
+                                        </div>
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -78,8 +93,17 @@
                             </div>
                         </div>
                     @empty
-                        <div class="rounded-xl border border-dashed border-stone-300 bg-stone-50 p-4 text-sm text-stone-500">
-                            Belum ada pelanggan.
+                        <div class="rounded-2xl border border-dashed border-rose-200 bg-rose-50/80 p-8 text-center">
+                            <div class="inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-rose-100 bg-white mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM6 20a7 7 0 1114 0" />
+                                </svg>
+                            </div>
+                            <p class="font-semibold text-stone-900">Mulai bangun daftar klien Anda</p>
+                            <p class="mt-2 text-sm text-stone-600">Tambahkan pelanggan pertama untuk mengelola booking dan layanan mereka.</p>
+                            <a href="{{ route('admin.customers.create') }}" class="mt-4 inline-flex rounded-2xl bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-600">
+                                Tambah Pelanggan
+                            </a>
                         </div>
                     @endforelse
                 </div>

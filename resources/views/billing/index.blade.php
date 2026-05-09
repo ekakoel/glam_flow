@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-2xl text-stone-800 leading-tight">Tagihan & Paket</h2>
+        <h2 class="font-semibold text-xl text-stone-800 leading-tight">Tagihan & Paket</h2>
     </x-slot>
 
     <div class="py-8 bg-gradient-to-b from-rose-50 via-amber-50 to-white min-h-screen">
@@ -163,7 +163,7 @@
                                         Upload Bukti Pembayaran (JPG/PNG/PDF)
                                         <input type="file" name="payment_proof" accept=".jpg,.jpeg,.png,.pdf" required class="mt-1 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm">
                                     </label>
-                                    <button type="submit" class="w-full rounded-xl bg-stone-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-black transition">
+                                    <button type="submit" class="w-full rounded-xl bg-stone-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-black transition min-h-[44px]">
                                         Konfirmasi Pembayaran
                                     </button>
                                 </form>
@@ -296,7 +296,7 @@
                     Catatan Request (opsional)
                     <textarea name="request_note" rows="3" class="mt-1 w-full rounded-xl border border-stone-300 px-3 py-2 text-sm"></textarea>
                 </label>
-                <button type="submit" class="w-full rounded-xl bg-stone-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-black transition">
+                <button type="submit" class="w-full rounded-xl bg-stone-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-black transition min-h-[44px]">
                     Kirim Request Upgrade
                 </button>
             </form>
@@ -358,7 +358,7 @@
                 <p id="request-modal-proof-empty" class="mt-2 text-xs text-stone-500">Bukti pembayaran tidak tersedia.</p>
             </div>
             <div class="mt-5 flex justify-end">
-                <button type="button" class="rounded-xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600" data-request-modal-close>
+                <button type="button" class="rounded-xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600 min-h-[44px]" data-request-modal-close>
                     Tutup
                 </button>
             </div>

@@ -8,10 +8,27 @@
     <div class="py-8 bg-gradient-to-b from-rose-50 via-amber-50 to-white min-h-screen">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             @if($hasPlanActivationNotice ?? false)
-                <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 shadow-sm">
+                <div class="p-4 rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-800 shadow-sm">
                     Paket Anda saat ini telah diaktifkan ({{ strtoupper($planActivationNoticePlan ?? $plan) }}), selamat menggunakan layanan kami.
                 </div>
             @endif
+
+            <div class="rounded-[2rem] border border-rose-100 bg-white/90 p-6 shadow-xl shadow-rose-100">
+                <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="max-w-2xl">
+                        <p class="text-sm font-semibold uppercase tracking-[0.32em] text-rose-600">Selamat datang kembali</p>
+                        <h1 class="mt-3 text-4xl font-semibold tracking-tight text-stone-900 sm:text-5xl">Halo, {{ Auth::user()->name }} 👋</h1>
+                        <p class="mt-4 max-w-2xl text-base leading-7 text-stone-600">Sistem GlamFlow siap membantu Anda menerima booking, mengelola layanan, dan mengikuti jadwal dengan lebih mudah setiap hari.</p>
+                    </div>
+                    <div class="inline-flex rounded-3xl border border-amber-100 bg-amber-50 px-5 py-4 text-sm text-stone-700 shadow-sm">
+                        <div>
+                            <p class="font-semibold text-stone-900">Paket saat ini</p>
+                            <p class="mt-1 uppercase tracking-[0.24em] text-amber-700">{{ strtoupper($planDetail['name'] ?? $plan) }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             @php
                 $alertClass = 'bg-yellow-50 border-yellow-200 text-yellow-800';
                 $alertText = 'Paket '.strtoupper($plan).' aktif';
@@ -20,13 +37,13 @@
                     $alertText = 'Paket '.strtoupper($plan).' aktif';
                 }
             @endphp
+
             <div class="p-5 rounded-2xl border {{ $alertClass }} shadow-md">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <p class="font-semibold">{{ $alertText }}</p>
-                        <p class="text-sm mt-1">Masa aktif: Tanpa batas waktu</p>
-                        <p class="text-sm mt-1">Aturan paket: {{ $planDetail['booking_limit_label'] ?? '-' }}</p>
-                        <p class="text-sm mt-1">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="space-y-3">
+                        <p class="text-sm font-semibold text-stone-900">{{ $alertText }}</p>
+                        <p class="text-sm text-stone-600">{{ $planDetail['booking_limit_label'] ?? '-' }}</p>
+                        <p class="text-sm text-stone-600">
                             Total booking terpakai: {{ $bookingUsage['bookings_count'] }}
                             @if($bookingUsage['is_unlimited'])
                                 booking
@@ -40,8 +57,9 @@
                             </div>
                         @endif
                     </div>
-                    <div class="flex flex-wrap gap-2">
-                        <a href="{{ route('billing.index') }}" class="px-5 py-2.5 rounded-xl bg-stone-800 text-white hover:bg-black transition">Upgrade</a>
+                    <div class="flex flex-wrap gap-3">
+                        <a href="{{ route('billing.index') }}" class="inline-flex items-center rounded-3xl bg-stone-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-stone-200 transition hover:bg-black">Upgrade Paket</a>
+                        <a href="{{ route('admin.bookings.index') }}" class="inline-flex items-center rounded-3xl border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-stone-700 transition hover:bg-stone-50">Lihat Booking</a>
                     </div>
                 </div>
             </div>
@@ -66,22 +84,22 @@
             <div class="bg-white p-6 rounded-2xl shadow border border-rose-100">
                 <h3 class="text-lg font-semibold text-stone-900">Aksi Cepat</h3>
                 <div class="mt-4 flex flex-wrap gap-3">
-                    <a href="{{ route('admin.services.index') }}" class="px-5 py-2.5 bg-rose-500 text-white rounded-xl hover:bg-rose-600">
+                    <a href="{{ route('admin.services.index') }}" class="px-5 py-2.5 bg-rose-500 text-white rounded-xl hover:bg-rose-600 transition min-h-[44px] flex items-center">
                         Layanan
                     </a>
-                    <a href="{{ route('admin.customers.index') }}" class="px-5 py-2.5 bg-stone-700 text-white rounded-xl hover:bg-stone-800">
+                    <a href="{{ route('admin.customers.index') }}" class="px-5 py-2.5 bg-stone-700 text-white rounded-xl hover:bg-stone-800 transition min-h-[44px] flex items-center">
                         Pelanggan
                     </a>
-                    <a href="{{ route('admin.bookings.index') }}" class="px-5 py-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600">
+                    <a href="{{ route('admin.bookings.index') }}" class="px-5 py-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition min-h-[44px] flex items-center">
                         Booking
                     </a>
-                    <a href="{{ route('admin.calendar.index') }}" class="px-5 py-2.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600">
+                    <a href="{{ route('admin.calendar.index') }}" class="px-5 py-2.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition min-h-[44px] flex items-center">
                         Kalender
                     </a>
-                    <a href="{{ route('admin.payments.index') }}" class="px-5 py-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600">
+                    <a href="{{ route('admin.payments.index') }}" class="px-5 py-2.5 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition min-h-[44px] flex items-center">
                         Bayar
                     </a>
-                    <a href="{{ route('admin.reports.index') }}" class="px-5 py-2.5 bg-stone-700 text-white rounded-xl hover:bg-stone-800">
+                    <a href="{{ route('admin.reports.index') }}" class="px-5 py-2.5 bg-stone-700 text-white rounded-xl hover:bg-stone-800 transition min-h-[44px] flex items-center">
                         Laporan
                     </a>
                 </div>
@@ -140,10 +158,16 @@
             </div>
 
             @if($servicesCount === 0)
-                <div class="p-5 rounded-2xl border border-dashed border-rose-200 bg-white shadow-sm">
-                    <p class="text-stone-700">Tambahkan layanan pertama Anda untuk mulai menerima booking.</p>
-                    <a href="{{ route('admin.services.create') }}" class="inline-flex mt-3 px-5 py-2.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 transition">
-                        Tambah layanan
+                <div class="rounded-[2rem] border border-dashed border-rose-200 bg-rose-50/80 p-8 text-center">
+                    <div class="inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-rose-100 bg-white mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-stone-900">Mulai dengan menambahkan layanan</h3>
+                    <p class="mt-2 max-w-xl mx-auto text-sm text-stone-600">Daftarkan layanan makeup Anda untuk mulai menerima booking dari klien dan mengelola harga layanan dengan mudah.</p>
+                    <a href="{{ route('admin.services.create') }}" class="mt-6 inline-flex items-center rounded-2xl bg-rose-500 px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-rose-600 transition">
+                        Buat Layanan Pertama
                     </a>
                 </div>
             @endif

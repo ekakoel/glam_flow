@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-2xl text-stone-800 leading-tight">Wizard Pengaturan Awal</h2>
+        <h2 class="font-semibold text-xl text-stone-800 leading-tight">Wizard Pengaturan Awal</h2>
     </x-slot>
 
     @php
@@ -131,8 +131,8 @@
                         <div class="flex items-center justify-between gap-3 pt-2">
                             <span class="text-xs text-stone-500">Simpan langkah ini, lalu lanjutkan.</span>
                             <div class="flex items-center gap-2">
-                                <button type="button" @click="openStep(2)" class="rounded-xl border border-stone-300 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">Lanjut</button>
-                                <button type="submit" class="rounded-xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600">Simpan 1</button>
+                                <button type="button" @click="openStep(2)" class="rounded-xl border border-stone-300 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50 min-h-[44px] flex items-center">Lanjut</button>
+                                <button type="submit" class="rounded-xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600 min-h-[44px] flex items-center">Simpan 1</button>
                             </div>
                         </div>
                     </form>
@@ -161,10 +161,10 @@
                             <textarea id="description" name="description" rows="3" class="field-control">{{ old('description') }}</textarea>
                         </div>
                         <div class="flex items-center justify-between gap-3 pt-2">
-                            <button type="button" @click="openStep(1)" class="rounded-xl border border-stone-300 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">Kembali</button>
+                            <button type="button" @click="openStep(1)" class="rounded-xl border border-stone-300 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50 min-h-[44px] flex items-center">Kembali</button>
                             <div class="flex items-center gap-2">
-                                <button type="button" @click="openStep(3)" class="rounded-xl border border-stone-300 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">Lanjut</button>
-                                <button type="submit" class="rounded-xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600">Simpan 2</button>
+                                <button type="button" @click="openStep(3)" class="rounded-xl border border-stone-300 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50 min-h-[44px] flex items-center">Lanjut</button>
+                                <button type="submit" class="rounded-xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600 min-h-[44px] flex items-center">Simpan 2</button>
                             </div>
                         </div>
                     </form>
@@ -193,10 +193,10 @@
                             </div>
                         </div>
                         <div class="flex items-center justify-between gap-3 pt-2">
-                            <button type="button" @click="openStep(2)" class="rounded-xl border border-stone-300 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50">Kembali</button>
+                            <button type="button" @click="openStep(2)" class="rounded-xl border border-stone-300 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50 min-h-[44px] flex items-center">Kembali</button>
                             <div class="flex items-center gap-2">
-                                <button type="button" @click="openStep(4)" class="rounded-xl border border-stone-300 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50" :disabled="!canAccessStep(4)" :class="{ 'opacity-60 cursor-not-allowed': !canAccessStep(4) }">Lanjut</button>
-                                <button type="submit" class="rounded-xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600">Simpan 3</button>
+                                <button type="button" @click="openStep(4)" class="rounded-xl border border-stone-300 px-4 py-2 text-sm text-stone-700 hover:bg-stone-50 min-h-[44px] flex items-center" :disabled="!canAccessStep(4)" :class="{ 'opacity-60 cursor-not-allowed': !canAccessStep(4) }">Lanjut</button>
+                                <button type="submit" class="rounded-xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-600 min-h-[44px] flex items-center">Simpan 3</button>
                             </div>
                         </div>
                     </form>

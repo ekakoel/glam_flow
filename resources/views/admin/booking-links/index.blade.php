@@ -1,8 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-2xl text-stone-800 leading-tight">Tautan Booking</h2>
-            <a href="{{ route('admin.bookings.index') }}" class="px-4 py-2 rounded-xl border border-stone-300 text-stone-700 hover:bg-stone-50">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 class="font-semibold text-xl text-stone-800 leading-tight">Tautan Booking</h2>
+            <a href="{{ route('admin.bookings.index') }}" class="px-4 py-2 rounded-xl border border-stone-300 text-stone-700 hover:bg-stone-50 min-h-[44px] flex items-center justify-center">
                 Kembali
             </a>
         </div>
@@ -97,7 +97,7 @@
                         @error('terms_content') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
                     </div>
 
-                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 transition">
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 transition min-h-[44px]">
                         Buat
                     </button>
                 </form>
@@ -132,17 +132,17 @@
                         </p>
 
                         <div class="mt-4 flex flex-wrap gap-2">
-                            <a href="{{ route('public.booking.show', $form->token) }}" target="_blank" class="px-4 py-2 rounded-xl bg-stone-800 text-white text-sm hover:bg-black">
+                            <a href="{{ route('public.booking.show', $form->token) }}" target="_blank" class="px-4 py-2 rounded-xl bg-stone-800 text-white text-sm hover:bg-black min-h-[44px] flex items-center justify-center">
                                 Buka
                             </a>
-                                <button type="button" class="px-4 py-2 rounded-xl border border-stone-300 text-stone-700 text-sm hover:bg-stone-50"
+                                <button type="button" class="px-4 py-2 rounded-xl border border-stone-300 text-stone-700 text-sm hover:bg-stone-50 min-h-[44px] flex items-center justify-center"
                                 onclick="navigator.clipboard.writeText('{{ route('public.booking.show', $form->token) }}').then(() => alert('Tautan berhasil disalin'))">
                                 Salin
                             </button>
                             <form method="POST" action="{{ route('admin.booking-links.extend', $form) }}">
                                 @csrf
                                 @method('PATCH')
-                                <button type="submit" class="px-4 py-2 rounded-xl bg-amber-500 text-white text-sm hover:bg-amber-600">
+                                <button type="submit" class="px-4 py-2 rounded-xl bg-amber-500 text-white text-sm hover:bg-amber-600 min-h-[44px] flex items-center justify-center">
                                     +48 Jam
                                 </button>
                             </form>
@@ -150,7 +150,7 @@
                                 <form method="POST" action="{{ route('admin.booking-links.deactivate', $form) }}">
                                     @csrf
                                     @method('PATCH')
-                                    <button type="submit" class="px-4 py-2 rounded-xl bg-red-500 text-white text-sm hover:bg-red-600">
+                                    <button type="submit" class="px-4 py-2 rounded-xl bg-red-500 text-white text-sm hover:bg-red-600 min-h-[44px] flex items-center justify-center">
                                         Nonaktifkan
                                     </button>
                                 </form>

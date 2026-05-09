@@ -1,13 +1,13 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-2xl text-stone-800 leading-tight">Booking</h2>
-            <div class="flex items-center gap-2">
-                <a href="{{ route('admin.booking-links.index') }}" class="px-5 py-2.5 bg-stone-700 text-white rounded-xl hover:bg-stone-800">
-                    Link
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 class="font-semibold text-xl text-stone-800 leading-tight">Booking</h2>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <a href="{{ route('admin.booking-links.index') }}" class="px-4 py-2.5 bg-stone-700 text-white rounded-xl hover:bg-stone-800 transition min-h-[44px] flex items-center justify-center">
+                    Link Booking
                 </a>
-                <a href="{{ route('admin.bookings.create') }}" class="px-5 py-2.5 bg-rose-500 text-white rounded-xl hover:bg-rose-600">
-                    Tambah
+                <a href="{{ route('admin.bookings.create') }}" class="px-4 py-2.5 bg-rose-500 text-white rounded-xl hover:bg-rose-600 transition min-h-[44px] flex items-center justify-center">
+                    Tambah Booking
                 </a>
             </div>
         </div>
@@ -220,7 +220,27 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="px-4 py-8 text-center text-sm text-gray-500">Belum ada booking.</td>
+                                    <td colspan="9" class="px-4 py-12 text-center">
+                                        <div class="inline-flex flex-col items-center gap-4 rounded-2xl border border-dashed border-rose-200 bg-rose-50/80 px-8 py-8 max-w-sm">
+                                            <div class="inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-rose-100 bg-white">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                </svg>
+                                            </div>
+                                            <div class="text-center space-y-2">
+                                                <p class="text-base font-semibold text-stone-900">Belum ada booking</p>
+                                                <p class="text-sm leading-6 text-stone-600">Mulai terima booking dari klien Anda. Buat booking baru atau bagikan link booking untuk memudahkan klien booking Anda.</p>
+                                            </div>
+                                            <div class="flex flex-col gap-2 w-full pt-2">
+                                                <a href="{{ route('admin.bookings.create') }}" class="inline-flex items-center justify-center rounded-2xl bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-600">
+                                                    Buat Booking Pertama
+                                                </a>
+                                                <a href="{{ route('admin.booking-links.index') }}" class="inline-flex items-center justify-center rounded-2xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50">
+                                                    Lihat Link Booking
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>

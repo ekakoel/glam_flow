@@ -1,9 +1,9 @@
 <x-app-layout>
     <style>[x-cloak]{display:none!important;}</style>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-2xl text-stone-800 leading-tight">Kalender Booking</h2>
-            <a href="{{ route('admin.bookings.index') }}" class="px-5 py-2.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 transition">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 class="font-semibold text-xl text-stone-800 leading-tight">Kalender Booking</h2>
+            <a href="{{ route('admin.bookings.index') }}" class="px-4 py-2.5 rounded-xl bg-rose-500 text-white hover:bg-rose-600 transition min-h-[44px] flex items-center justify-center">
                 Booking
             </a>
         </div>
